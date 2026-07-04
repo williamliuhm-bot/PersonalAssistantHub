@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -9,16 +9,45 @@ import {
   Grid,
   CircularProgress,
   Chip,
+  TextField,
+  Button,
+  Stack,
 } from '@mui/material';
-import { TrendingUp, Lightbulb } from '@mui/icons-material';
+import { Lightbulb } from '@mui/icons-material';
 import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line, ScatterChart, Scatter,
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line,
 } from 'recharts';
 import { motion } from 'framer-motion';
-import { financeApi, type FinanceReport } from '../api/finance';
-import { analyticsApi, type ProductivityStats, type CorrelationData, type Insight } from '../api/analytics';
+import {
+  financeApi,
+  type Account,
+  type Transaction,
+  type BalanceHistorySeries,
+} from '../api/finance';
+import {
+  analyticsApi,
+  type ProductivityReport,
+  type CorrelationData,
+} from '../api/analytics';
+import { formatMoney } from '../utils/currency';
+import {
+  buildExpenseBreakdownForRange,
+  buildDailyFlowRub,
+  getDefaultReportRange,
+  formatDateRangeRu,
+  formatSingleDateRu,
+  daysFromDateToToday,
+  toLocalDateString,
+} from '../utils/financeStats';
 
 const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
+
+const CURRENCY_LINE_COLORS: Record<string, string> = {
+  RUB: '#2563EB',
+  USD: '#10B981',
+  EUR: '#F59E0B',
+  GBP: '#8B5CF6',
+};
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -31,45 +60,159 @@ function TabPanel({ value, index, children }: { value: number; index: number; ch
 
 export default function Analytics() {
   const [tabValue, setTabValue] = useState(0);
-  const [report, setReport] = useState<FinanceReport | null>(null);
-  const [productivity, setProductivity] = useState<ProductivityStats | null>(null);
-  const [correlation, setCorrelation] = useState<CorrelationData[]>([]);
-  const [insights, setInsights] = useState<Insight[]>([]);
+  const defaultRange = getDefaultReportRange();
+  const [dateFrom, setDateFrom] = useState(defaultRange.from);
+  const [dateTo, setDateTo] = useState(defaultRange.to);
+  const [appliedFrom, setAppliedFrom] = useState(defaultRange.from);
+  const [appliedTo, setAppliedTo] = useState(defaultRange.to);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [pieData, setPieData] = useState<{ name: string; value: number }[]>([]);
+  const [barData, setBarData] = useState<{ date: string; label: string; Доходы: number; Расходы: number }[]>([]);
+  const [balanceHistory, setBalanceHistory] = useState<Array<{ date: string; label: string } & Record<string, number | string>>>([]);
+  const [balanceCurrencies, setBalanceCurrencies] = useState<string[]>([]);
+  const [productivityReports, setProductivityReports] = useState<ProductivityReport[]>([]);
+  const [correlation, setCorrelation] = useState<CorrelationData | null>(null);
+  const [insightText, setInsightText] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [financeLoading, setFinanceLoading] = useState(false);
+  const [rangeError, setRangeError] = useState('');
+
+  const getCurrency = useCallback(
+    (tx: Transaction) =>
+      tx.account_currency || accounts.find((a) => a.id === tx.account_id)?.currency || 'RUB',
+    [accounts],
+  );
+
+  const loadFinanceCharts = useCallback(async (from: string, to: string) => {
+    setFinanceLoading(true);
+    try {
+      const [txResp, balanceResp] = await Promise.all([
+        financeApi.getTransactions({ per_page: 500, date_from: from, date_to: to }),
+        financeApi.getBalanceHistory(daysFromDateToToday(from)),
+      ]);
+
+      const tx = txResp.data;
+      setPieData(buildExpenseBreakdownForRange(tx, from, to, getCurrency));
+      setBarData(buildDailyFlowRub(tx, from, to, getCurrency));
+
+      const series = balanceResp.data as BalanceHistorySeries[];
+      if (series.length > 0) {
+        setBalanceCurrencies(series.map((s) => s.currency));
+        const byDate: Record<string, { date: string; label: string } & Record<string, number | string>> = {};
+        series.forEach((s) => {
+          s.points
+            .filter((p) => p.date >= from && p.date <= to)
+            .forEach((point) => {
+              if (!byDate[point.date]) {
+                byDate[point.date] = {
+                  date: point.date,
+                  label: point.date.slice(5).replace('-', '.'),
+                };
+              }
+              byDate[point.date][s.currency] = Number(point.balance);
+            });
+        });
+        setBalanceHistory(
+          Object.values(byDate).sort((a, b) => String(a.date).localeCompare(String(b.date))),
+        );
+      } else {
+        setBalanceCurrencies([]);
+        setBalanceHistory([]);
+      }
+    } finally {
+      setFinanceLoading(false);
+    }
+  }, [getCurrency]);
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      financeApi.getReports(),
-      analyticsApi.getProductivity(),
+    Promise.allSettled([
+      financeApi.getAccounts(),
+      analyticsApi.getProductivityReports(),
       analyticsApi.getCorrelation(),
       analyticsApi.getInsights(),
-    ]).then(([r, p, c, i]) => {
-      setReport(r.data);
-      setProductivity(p.data);
-      setCorrelation(c.data);
-      setInsights(i.data);
+    ]).then(async (results) => {
+      const get = <T,>(idx: number): T | null =>
+        results[idx].status === 'fulfilled' ? (results[idx] as PromiseFulfilledResult<{ data: T }>).value.data : null;
+
+      const acc = get<Account[]>(0);
+      const productivity = get<ProductivityReport[]>(1);
+      const corr = get<CorrelationData>(2);
+      const insights = get<{ insight: string }>(3);
+
+      if (acc) setAccounts(acc);
+      if (productivity) setProductivityReports(productivity);
+      if (corr) setCorrelation(corr);
+      if (insights?.insight) setInsightText(insights.insight);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    });
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      loadFinanceCharts(appliedFrom, appliedTo);
+    }
+  }, [loading, appliedFrom, appliedTo, loadFinanceCharts]);
+
+  const applyDateRange = () => {
+    if (dateFrom > dateTo) {
+      setRangeError('Дата начала не может быть позже даты окончания');
+      return;
+    }
+    setRangeError('');
+    setAppliedFrom(dateFrom);
+    setAppliedTo(dateTo);
+  };
+
+  const setPresetRange = (from: string, to: string) => {
+    setDateFrom(from);
+    setDateTo(to);
+    setAppliedFrom(from);
+    setAppliedTo(to);
+    setRangeError('');
+  };
+
+  const setCurrentMonth = () => {
+    const now = new Date();
+    const from = toLocalDateString(new Date(now.getFullYear(), now.getMonth(), 1));
+    const to = toLocalDateString(now);
+    setPresetRange(from, to);
+  };
+
+  const setPrevMonth = () => {
+    const now = new Date();
+    const from = toLocalDateString(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    const to = toLocalDateString(new Date(now.getFullYear(), now.getMonth(), 0));
+    setPresetRange(from, to);
+  };
 
   if (loading) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>;
   }
 
-  const pieData: { name: string; value: number }[] = [];
-  const barData: { month: string; Доходы: number; Расходы: number }[] = [];
-  const balanceData: { month: string; balance: number }[] = [];
+  const totalTasksCompleted = productivityReports.reduce((sum, r) => sum + r.tasks_completed, 0);
+  const avgTasksPerDay = productivityReports.length
+    ? Math.round(totalTasksCompleted / productivityReports.length)
+    : 0;
+  const latestCorrelation = correlation?.correlation_score ?? 0;
 
-  const productivityChartData = productivity?.tasks_by_day?.map((d) => ({
-    date: d.date?.slice(5, 10) || '',
-    tasks: d.count,
-  })) || [];
+  const productivityChartData = productivityReports
+    .slice()
+    .reverse()
+    .map((r) => ({
+      date: r.report_date.slice(5),
+      tasks: r.tasks_completed,
+      expenses: r.total_expenses,
+    }));
 
-  const habitsChartData = productivity?.habits_by_day?.map((d) => ({
-    date: d.date?.slice(5, 10) || '',
-    habits: d.count,
-  })) || [];
+  const scatterData = correlation
+    ? correlation.dates.map((date, idx) => ({
+        productivity_score: correlation.tasks_completed[idx] ?? 0,
+        expenses: correlation.expenses[idx] ?? 0,
+        date,
+      }))
+    : [];
+
+  const barTickInterval = barData.length > 45 ? Math.floor(barData.length / 20) : barData.length > 20 ? 2 : 0;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -85,83 +228,168 @@ export default function Analytics() {
         <Tab label="Корреляция" />
       </Tabs>
 
-      {/* Finance Tab */}
       <TabPanel value={tabValue} index={0}>
-        <Grid container spacing={2.5}>
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                  Расходы по категориям
-                </Typography>
-                {pieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={320}>
-                    <PieChart>
-                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={3} dataKey="value">
-                        {pieData.map((_, idx) => (
-                          <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+        <Card sx={{ mb: 2.5 }}>
+          <CardContent>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+              Период отчёта
+            </Typography>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} flexWrap="wrap" useFlexGap>
+              <TextField
+                label="С"
+                type="date"
+                size="small"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{ minWidth: 160 }}
+              />
+              <TextField
+                label="По"
+                type="date"
+                size="small"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{ minWidth: 160 }}
+              />
+              <Button variant="contained" onClick={applyDateRange} disabled={financeLoading}>
+                Показать
+              </Button>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Chip label="Текущий месяц" size="small" onClick={setCurrentMonth} clickable variant="outlined" />
+                <Chip label="Прошлый месяц" size="small" onClick={setPrevMonth} clickable variant="outlined" />
+              </Stack>
+            </Stack>
+            {rangeError && (
+              <Typography variant="caption" color="error.main" sx={{ display: 'block', mt: 1 }}>
+                {rangeError}
+              </Typography>
+            )}
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>
+              {formatDateRangeRu(appliedFrom, appliedTo)}
+            </Typography>
+          </CardContent>
+        </Card>
+
+        {financeLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
+        ) : (
+          <Grid container spacing={2.5}>
+            <Grid item xs={12} md={6}>
+              <Card>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                    Расходы по категориям (₽)
+                  </Typography>
+                  {pieData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={320}>
+                      <PieChart>
+                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={3} dataKey="value">
+                          {pieData.map((_, idx) => (
+                            <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }}
+                          formatter={(value: number) => formatMoney(value, 'RUB')}
+                        />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 10 }}>Нет данных за период</Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                    Доходы / Расходы по дням (₽)
+                  </Typography>
+                  {barData.some((d) => d.Доходы > 0 || d.Расходы > 0) ? (
+                    <ResponsiveContainer width="100%" height={320}>
+                      <BarChart data={barData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
+                        <XAxis
+                          dataKey="label"
+                          stroke="#94A3B8"
+                          fontSize={11}
+                          interval={barTickInterval}
+                          angle={barData.length > 14 ? -45 : 0}
+                          textAnchor={barData.length > 14 ? 'end' : 'middle'}
+                          height={barData.length > 14 ? 50 : 30}
+                        />
+                        <YAxis stroke="#94A3B8" fontSize={12} />
+                        <Tooltip
+                          contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }}
+                          formatter={(value: number) => formatMoney(value, 'RUB')}
+                          labelFormatter={(_, payload) => {
+                            const item = payload?.[0]?.payload as { date?: string } | undefined;
+                            return item?.date ? formatSingleDateRu(item.date) : '';
+                          }}
+                        />
+                        <Bar dataKey="Доходы" fill="#10B981" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Расходы" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                        <Legend />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 10 }}>Нет данных за период</Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12}>
+              <Card>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                    Динамика баланса
+                  </Typography>
+                  {balanceHistory.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={balanceHistory}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
+                        <XAxis
+                          dataKey="label"
+                          stroke="#94A3B8"
+                          fontSize={11}
+                          interval={balanceHistory.length > 45 ? Math.floor(balanceHistory.length / 20) : balanceHistory.length > 20 ? 2 : 0}
+                          angle={balanceHistory.length > 14 ? -45 : 0}
+                          textAnchor={balanceHistory.length > 14 ? 'end' : 'middle'}
+                          height={balanceHistory.length > 14 ? 50 : 30}
+                        />
+                        <YAxis stroke="#94A3B8" fontSize={12} />
+                        <Tooltip
+                          contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }}
+                          formatter={(value: number, name: string) => [formatMoney(value, name), name]}
+                        />
+                        <Legend />
+                        {balanceCurrencies.map((currency, idx) => (
+                          <Line
+                            key={currency}
+                            type="monotone"
+                            dataKey={currency}
+                            name={currency}
+                            stroke={CURRENCY_LINE_COLORS[currency] || COLORS[idx % COLORS.length]}
+                            strokeWidth={2}
+                            dot={false}
+                          />
                         ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 10 }}>Нет данных</Typography>
-                )}
-              </CardContent>
-            </Card>
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 10 }}>Нет данных за период</Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                  Доходы / Расходы
-                </Typography>
-                {barData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={barData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-                      <XAxis dataKey="month" stroke="#94A3B8" fontSize={12} />
-                      <YAxis stroke="#94A3B8" fontSize={12} />
-                      <Tooltip contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }} />
-                      <Bar dataKey="Доходы" fill="#10B981" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="Расходы" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                      <Legend />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 10 }}>Нет данных</Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                  Динамика баланса
-                </Typography>
-                {balanceData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={balanceData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-                      <XAxis dataKey="month" stroke="#94A3B8" fontSize={12} />
-                      <YAxis stroke="#94A3B8" fontSize={12} />
-                      <Tooltip contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }} />
-                      <Line type="monotone" dataKey="balance" stroke="#2563EB" strokeWidth={2} dot={{ fill: '#2563EB' }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 10 }}>Нет данных</Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+        )}
       </TabPanel>
 
-      {/* Productivity Tab */}
       <TabPanel value={tabValue} index={1}>
         <Grid container spacing={2.5}>
           <Grid item xs={12} sm={6} md={3}>
@@ -169,58 +397,49 @@ export default function Analytics() {
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="body2" color="text.secondary">Задач выполнено</Typography>
                 <Typography variant="h3" sx={{ fontWeight: 700, color: 'success.main', my: 1 }}>
-                  {productivity?.tasks_completed ?? 0}
+                  {totalTasksCompleted}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  из {productivity?.tasks_total ?? 0}
-                </Typography>
+                <Typography variant="caption" color="text.secondary">за период</Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary">Привычек выполнено</Typography>
+                <Typography variant="body2" color="text.secondary">Среднее в день</Typography>
                 <Typography variant="h3" sx={{ fontWeight: 700, color: 'warning.main', my: 1 }}>
-                  {productivity?.habits_completed ?? 0}
+                  {avgTasksPerDay}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  из {productivity?.habits_total ?? 0}
-                </Typography>
+                <Typography variant="caption" color="text.secondary">задач</Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary">Текущая серия</Typography>
+                <Typography variant="body2" color="text.secondary">Отчётов</Typography>
                 <Typography variant="h3" sx={{ fontWeight: 700, color: 'primary.main', my: 1 }}>
-                  {productivity?.current_streak ?? 0}
+                  {productivityReports.length}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">дней</Typography>
+                <Typography variant="caption" color="text.secondary">записей</Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary">Продуктивность</Typography>
-                <Typography variant="h3" sx={{ fontWeight: 700, color: productivity && productivity.tasks_total > 0
-                  ? Math.round((productivity.tasks_completed / productivity.tasks_total) * 100) > 50 ? 'success.main' : 'warning.main'
-                  : 'text.secondary', my: 1
-                }}>
-                  {productivity && productivity.tasks_total > 0
-                    ? Math.round((productivity.tasks_completed / productivity.tasks_total) * 100)
-                    : 0}%
+                <Typography variant="body2" color="text.secondary">Корреляция</Typography>
+                <Typography variant="h3" sx={{ fontWeight: 700, color: 'info.main', my: 1 }}>
+                  {(latestCorrelation * 100).toFixed(0)}%
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <Card>
               <CardContent>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                  Выполненные задачи
+                  Задачи и расходы по дням
                 </Typography>
                 {productivityChartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={280}>
@@ -229,29 +448,9 @@ export default function Analytics() {
                       <XAxis dataKey="date" stroke="#94A3B8" fontSize={12} />
                       <YAxis stroke="#94A3B8" fontSize={12} />
                       <Tooltip contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }} />
-                      <Bar dataKey="tasks" fill="#2563EB" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 8 }}>Нет данных</Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                  Выполненные привычки
-                </Typography>
-                {habitsChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={habitsChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-                      <XAxis dataKey="date" stroke="#94A3B8" fontSize={12} />
-                      <YAxis stroke="#94A3B8" fontSize={12} />
-                      <Tooltip contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }} />
-                      <Bar dataKey="habits" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="tasks" fill="#2563EB" radius={[4, 4, 0, 0]} name="Задачи" />
+                      <Bar dataKey="expenses" fill="#EF4444" radius={[4, 4, 0, 0]} name="Расходы" />
+                      <Legend />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -263,39 +462,26 @@ export default function Analytics() {
         </Grid>
       </TabPanel>
 
-      {/* Correlation Tab */}
       <TabPanel value={tabValue} index={2}>
         <Grid container spacing={2.5}>
           <Grid item xs={12} md={8}>
             <Card>
               <CardContent>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                  Продуктивность vs Расходы
+                  Задачи vs Расходы
                 </Typography>
-                {correlation.length > 0 ? (
+                {scatterData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={400}>
-                    <ScatterChart>
+                    <LineChart data={scatterData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-                      <XAxis
-                        dataKey="productivity_score"
-                        name="Продуктивность"
-                        stroke="#94A3B8"
-                        fontSize={12}
-                        label={{ value: 'Продуктивность', position: 'bottom', fill: '#94A3B8', fontSize: 12 }}
-                      />
-                      <YAxis
-                        dataKey="expenses"
-                        name="Расходы"
-                        stroke="#94A3B8"
-                        fontSize={12}
-                        label={{ value: 'Расходы (₽)', angle: -90, position: 'insideLeft', fill: '#94A3B8', fontSize: 12 }}
-                      />
-                      <Tooltip
-                        contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }}
-                        formatter={(value: number) => value.toLocaleString()}
-                      />
-                      <Scatter data={correlation} fill="#2563EB" />
-                    </ScatterChart>
+                      <XAxis dataKey="date" stroke="#94A3B8" fontSize={12} />
+                      <YAxis yAxisId="left" stroke="#2563EB" fontSize={12} />
+                      <YAxis yAxisId="right" orientation="right" stroke="#EF4444" fontSize={12} />
+                      <Tooltip contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }} />
+                      <Line yAxisId="left" type="monotone" dataKey="productivity_score" stroke="#2563EB" name="Задачи" />
+                      <Line yAxisId="right" type="monotone" dataKey="expenses" stroke="#EF4444" name="Расходы" />
+                      <Legend />
+                    </LineChart>
                   </ResponsiveContainer>
                 ) : (
                   <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 12 }}>Нет данных</Typography>
@@ -318,31 +504,21 @@ export default function Analytics() {
                     AI Аналитика
                   </Typography>
                 </Box>
-                {insights.length > 0 ? (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {insights.map((insight) => (
-                      <Box key={insight.id}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                          <Chip
-                            label={insight.type}
-                            size="small"
-                            color={insight.severity === 'high' ? 'error' : insight.severity === 'medium' ? 'warning' : 'info'}
-                            sx={{ height: 20, fontSize: 10, fontWeight: 600 }}
-                          />
-                        </Box>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {insight.title}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {insight.description}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
+                {insightText ? (
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {insightText}
+                  </Typography>
                 ) : (
                   <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
                     Нет инсайтов
                   </Typography>
+                )}
+                {correlation && (
+                  <Chip
+                    label={`Корреляция: ${(correlation.correlation_score * 100).toFixed(0)}%`}
+                    size="small"
+                    sx={{ mt: 2 }}
+                  />
                 )}
               </CardContent>
             </Card>

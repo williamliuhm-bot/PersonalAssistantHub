@@ -32,14 +32,14 @@ const COLUMNS = [
 ];
 
 const PRIORITY_COLORS: Record<string, string> = {
-  urgent: '#EF4444',
+  critical: '#EF4444',
   high: '#F59E0B',
   medium: '#2563EB',
   low: '#94A3B8',
 };
 
 const PRIORITY_LABELS: Record<string, string> = {
-  urgent: 'Срочно',
+  critical: 'Критичный',
   high: 'Высокий',
   medium: 'Средний',
   low: 'Низкий',
@@ -156,7 +156,7 @@ export default function Tasks() {
               onChange={(e) => setPriorityFilter(e.target.value)}
             >
               <MenuItem value="">Все</MenuItem>
-              <MenuItem value="urgent">Срочно</MenuItem>
+              <MenuItem value="critical">Критичный</MenuItem>
               <MenuItem value="high">Высокий</MenuItem>
               <MenuItem value="medium">Средний</MenuItem>
               <MenuItem value="low">Низкий</MenuItem>
@@ -232,7 +232,14 @@ export default function Tasks() {
                                         {task.title}
                                       </Typography>
                                     </Box>
-                                    <IconButton size="small" onClick={() => handleDeleteTask(task.id)} sx={{ p: 0.3 }}>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteTask(task.id);
+                                      }}
+                                      sx={{ p: 0.3 }}
+                                    >
                                       <Typography variant="caption" color="error.main">✕</Typography>
                                     </IconButton>
                                   </Box>
@@ -303,7 +310,7 @@ export default function Tasks() {
                 <MenuItem value="low">Низкий</MenuItem>
                 <MenuItem value="medium">Средний</MenuItem>
                 <MenuItem value="high">Высокий</MenuItem>
-                <MenuItem value="urgent">Срочно</MenuItem>
+                <MenuItem value="critical">Критичный</MenuItem>
               </Select>
             </FormControl>
             <TextField
@@ -350,7 +357,7 @@ export default function Tasks() {
                 <MenuItem value="low">Низкий</MenuItem>
                 <MenuItem value="medium">Средний</MenuItem>
                 <MenuItem value="high">Высокий</MenuItem>
-                <MenuItem value="urgent">Срочно</MenuItem>
+                <MenuItem value="critical">Критичный</MenuItem>
               </Select>
             </FormControl>
             <FormControl fullWidth>

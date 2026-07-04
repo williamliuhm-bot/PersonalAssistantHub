@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user_id
@@ -85,7 +85,44 @@ async def mark_notification_read(
             detail="Notification not found",
         )
     notification.is_read = True
+    await db.commit()
     return MarkReadResponse(id=notification.id, is_read=notification.is_read)
+
+
+@app.post("/api/notifications/mark-all-read")
+async def mark_all_notifications_read(
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    await db.execute(
+        update(Notification)
+        .where(Notification.user_id == user_id, Notification.is_read.is_(False))
+        .values(is_read=True)
+    )
+    await db.commit()
+    return {"status": "ok"}
+
+
+@app.delete("/api/notifications/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_notification(
+    notification_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Notification).where(
+            Notification.id == notification_id,
+            Notification.user_id == user_id,
+        )
+    )
+    notification = result.scalar_one_or_none()
+    if notification is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Notification not found",
+        )
+    await db.delete(notification)
+    await db.commit()
 
 
 @app.post("/api/notifications/send", response_model=SendNotificationResponse, status_code=status.HTTP_201_CREATED)

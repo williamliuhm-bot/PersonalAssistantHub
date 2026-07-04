@@ -35,10 +35,10 @@ class TimestampMixin:
 
 
 class AccountType(str, PyEnum):
-    CASH = "Cash"
-    BANK = "Bank"
-    CARD = "Card"
-    SAVINGS = "Savings"
+    CASH = "cash"
+    BANK = "bank"
+    CARD = "card"
+    SAVINGS = "savings"
 
 
 class CategoryType(str, PyEnum):
@@ -47,9 +47,9 @@ class CategoryType(str, PyEnum):
 
 
 class TransactionType(str, PyEnum):
-    INCOME = "Income"
-    EXPENSE = "Expense"
-    TRANSFER = "Transfer"
+    INCOME = "income"
+    EXPENSE = "expense"
+    TRANSFER = "transfer"
 
 
 class TaskStatus(str, PyEnum):
@@ -66,16 +66,15 @@ class TaskPriority(str, PyEnum):
 
 
 class HabitFrequency(str, PyEnum):
-    DAILY = "daily"
-    WEEKLY = "weekly"
-    MONTHLY = "monthly"
+    DAILY = "DAILY"
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"
 
 
 class BudgetPeriod(str, PyEnum):
     WEEKLY = "weekly"
     MONTHLY = "monthly"
     YEARLY = "yearly"
-    CUSTOM = "custom"
 
 
 class User(Base, TimestampMixin):
@@ -502,7 +501,7 @@ async def main():
                 user_id=user_id, report_date=report_date,
                 tasks_completed=tasks_done, total_expenses=total_exp,
                 entertainment_expenses=ent_exp, correlation_score=score,
-                insight=f"Completed {tasks_done} tasks with ${total_exp} in expenses.",
+                insight=f"Выполнено задач: {tasks_done}, расходы: {total_exp} $.",
             ))
         print(f"  -> 5 productivity reports created")
 
@@ -516,8 +515,11 @@ async def main():
                 user_id=user_id, forecast_date=forecast_date,
                 predicted_expenses=predicted, budget_limit=limit,
                 risk_level=risk,
-                recommendation=f"Predicted expenses: ${predicted}. Budget limit: ${limit}. Risk: {risk}."
-                if risk == "medium" else "On track to stay within budget.",
+                recommendation=(
+                    f"Прогноз расходов: {predicted} $, лимит бюджета: {limit} $. Риск: средний."
+                    if risk == "medium"
+                    else "Расходы укладываются в бюджет."
+                ),
             ))
         await session.commit()
         print(f"  -> 3 budget forecasts created")

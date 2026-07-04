@@ -12,6 +12,7 @@ import Calendar from './pages/Calendar';
 import Habits from './pages/Habits';
 import Analytics from './pages/Analytics';
 import Notifications from './pages/Notifications';
+import Settings from './pages/Settings';
 
 export default function App() {
   const { checkAuth, isLoading } = useAuth();
@@ -40,6 +41,7 @@ export default function App() {
         <Route path="habits" element={<Habits />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="notifications" element={<Notifications />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

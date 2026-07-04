@@ -13,7 +13,7 @@ export interface Task {
   title: string;
   description?: string;
   status: 'todo' | 'in_progress' | 'done';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  priority: 'low' | 'medium' | 'high' | 'critical';
   project?: number;
   project_name?: string;
   project_color?: string;
@@ -30,8 +30,20 @@ export interface Habit {
   streak: number;
   color: string;
   icon?: string;
+  last_completed?: string | null;
   created_at: string;
-  completed_dates: string[];
+}
+
+export interface HabitCalendarDay {
+  date: string;
+  completed: boolean;
+}
+
+export interface HabitCalendar {
+  habit_id: number;
+  year: number;
+  month: number;
+  days: HabitCalendarDay[];
 }
 
 export const tasksApi = {
@@ -41,7 +53,7 @@ export const tasksApi = {
   createProject: (data: Partial<Project>) =>
     client.post<Project>('/tasks/api/projects', data),
 
-  getTasks: (params?: { status?: string; priority?: string; project?: number; search?: string }) =>
+  getTasks: (params?: { status?: string; priority?: string; project_id?: number; search?: string }) =>
     client.get<Task[]>('/tasks/api/tasks', { params }),
 
   createTask: (data: Partial<Task>) =>
@@ -62,6 +74,14 @@ export const tasksApi = {
   updateHabit: (id: number, data: Partial<Habit>) =>
     client.patch<Habit>(`/tasks/api/habits/${id}`, data),
 
+  deleteHabit: (id: number) =>
+    client.delete(`/tasks/api/habits/${id}`),
+
   completeHabit: (id: number) =>
-    client.post<Habit>(`/tasks/api/habits/${id}/complete`),
+    client.post(`/tasks/api/habits/${id}/log`),
+
+  getHabitCalendar: (id: number, year?: number, month?: number) =>
+    client.get<HabitCalendar>(`/tasks/api/habits/${id}/calendar`, {
+      params: { year, month },
+    }),
 };

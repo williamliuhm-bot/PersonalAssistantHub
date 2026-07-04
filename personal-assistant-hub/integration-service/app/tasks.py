@@ -1,18 +1,23 @@
 import asyncio
-import os
-from datetime import date, timedelta
+import calendar
+import logging
+from datetime import date, datetime, timedelta, timezone
 
-import httpx
 import numpy as np
 from scipy import stats
-from sqlalchemy import select
 
 from app.celery_app import celery_app
 from app.database import async_session
+from app.db_queries import (
+    create_payment_reminder_task,
+    fetch_all_user_ids,
+    fetch_budget_forecast_inputs,
+    fetch_completed_tasks_by_date,
+    fetch_daily_expenses,
+)
 from app.models import BudgetForecast, ProductivityReport, RiskLevel
 
-FINANCE_SERVICE_URL = os.getenv("FINANCE_SERVICE_URL", "http://localhost:8003")
-TASKS_SERVICE_URL = os.getenv("TASKS_SERVICE_URL", "http://localhost:8004")
+logger = logging.getLogger(__name__)
 
 
 def run_async(coro):
@@ -25,8 +30,11 @@ def run_async(coro):
 
 @celery_app.task
 def auto_create_task_from_payment(event_data: dict):
-    event_type = event_data.get("event_type")
-    if event_type != "recurring_payment_created":
+    run_async(_auto_create_task_from_payment_async(event_data))
+
+
+async def _auto_create_task_from_payment_async(event_data: dict):
+    if event_data.get("event_type") != "recurring_payment_created":
         return
 
     data = event_data.get("data", {})
@@ -37,7 +45,7 @@ def auto_create_task_from_payment(event_data: dict):
     if not description or not user_id:
         return
 
-    due_day = max(recurring_day - 1, 1)
+    due_day = max(int(recurring_day) - 1, 1)
     today = date.today()
     try:
         due_date = date(today.year, today.month, due_day)
@@ -49,22 +57,20 @@ def auto_create_task_from_payment(event_data: dict):
     except ValueError:
         due_date = today + timedelta(days=1)
 
-    task_data = {
-        "title": f"Pay {description}",
-        "due_date": due_date.isoformat(),
-        "user_id": user_id,
-    }
+    deadline = datetime.combine(due_date, datetime.min.time(), tzinfo=timezone.utc)
+    title = f"Pay {description}"
 
-    with httpx.Client() as client:
+    async with async_session() as session:
         try:
-            resp = client.post(
-                f"{TASKS_SERVICE_URL}/api/tasks",
-                json=task_data,
-                timeout=10,
+            await create_payment_reminder_task(
+                session,
+                user_id=int(user_id),
+                title=title,
+                deadline_iso=deadline.isoformat(),
             )
-            resp.raise_for_status()
-        except Exception as e:
-            print(f"Failed to create task from payment: {e}")
+            logger.info("Created payment reminder task for user %s: %s", user_id, title)
+        except Exception:
+            logger.exception("Failed to create task from recurring payment for user %s", user_id)
 
 
 @celery_app.task
@@ -73,72 +79,30 @@ def analyze_productivity():
 
 
 async def _analyze_productivity_async():
-    async with httpx.AsyncClient() as client:
-        try:
-            users_resp = await client.get(
-                f"{FINANCE_SERVICE_URL}/api/users",
-                timeout=10,
-            )
-            users = users_resp.json()
-        except Exception:
-            users = []
+    async with async_session() as session:
+        user_ids = await fetch_all_user_ids(session)
 
-    for user in users:
-        user_id = user.get("id") if isinstance(user, dict) else user
+    for user_id in user_ids:
         await _analyze_user_productivity(user_id)
 
 
 async def _analyze_user_productivity(user_id: int):
-    async with httpx.AsyncClient() as client:
-        try:
-            tasks_resp = await client.get(
-                f"{TASKS_SERVICE_URL}/api/tasks/completed",
-                params={"user_id": user_id},
-                timeout=10,
-            )
-            tasks_data = tasks_resp.json()
-        except Exception:
-            tasks_data = []
-
-        try:
-            expenses_resp = await client.get(
-                f"{FINANCE_SERVICE_URL}/api/expenses/daily",
-                params={"user_id": user_id},
-                timeout=10,
-            )
-            expenses_data = expenses_resp.json()
-        except Exception:
-            expenses_data = []
-
-    task_counts = {}
-    for t in tasks_data:
-        d = t.get("date") or t.get("completed_date")
-        if d:
-            task_counts[d] = task_counts.get(d, 0) + 1
-
-    daily_expenses = {}
-    daily_entertainment = {}
-    for e in expenses_data:
-        d = e.get("date")
-        cat = e.get("category", "")
-        amount = e.get("amount", 0)
-        if d:
-            daily_expenses[d] = daily_expenses.get(d, 0) + amount
-            if cat.lower() in ("entertainment", "fun", "leisure"):
-                daily_entertainment[d] = daily_entertainment.get(d, 0) + amount
+    async with async_session() as session:
+        task_counts = await fetch_completed_tasks_by_date(session, user_id)
+        daily_expenses, daily_entertainment = await fetch_daily_expenses(session, user_id)
 
     common_dates = sorted(set(task_counts.keys()) & set(daily_expenses.keys()))
 
     if len(common_dates) < 3:
         correlation_score = 0.0
-        insight = "Not enough data for productivity analysis."
+        insight = "Недостаточно данных для анализа продуктивности."
     else:
         x = np.array([task_counts[d] for d in common_dates], dtype=float)
         y = np.array([daily_expenses[d] for d in common_dates], dtype=float)
 
         try:
             r, _ = stats.pearsonr(x, y)
-            correlation_score = round(r, 4)
+            correlation_score = round(float(r), 4)
         except Exception:
             correlation_score = 0.0
 
@@ -147,21 +111,37 @@ async def _analyze_user_productivity(user_id: int):
         high_prod_days = [d for d in common_dates if d not in low_prod_days]
 
         if low_prod_days:
-            avg_ent_low = np.mean([daily_entertainment.get(d, 0) for d in low_prod_days])
-            avg_ent_high = np.mean([daily_entertainment.get(d, 0) for d in high_prod_days]) if high_prod_days else 0
+            avg_ent_low = float(np.mean([daily_entertainment.get(d, 0) for d in low_prod_days]))
+            avg_ent_high = (
+                float(np.mean([daily_entertainment.get(d, 0) for d in high_prod_days]))
+                if high_prod_days
+                else 0.0
+            )
             if avg_ent_high > 0:
                 pct_diff = round((avg_ent_low - avg_ent_high) / avg_ent_high * 100, 1)
                 if pct_diff > 0:
-                    insight = f"On low productivity days, entertainment expenses are {pct_diff}% higher"
+                    insight = (
+                        f"В дни с низкой продуктивностью расходы на развлечения "
+                        f"на {pct_diff}% выше"
+                    )
                 else:
-                    insight = f"On low productivity days, entertainment expenses are {abs(pct_diff)}% lower"
+                    insight = (
+                        f"В дни с низкой продуктивностью расходы на развлечения "
+                        f"на {abs(pct_diff)}% ниже"
+                    )
             else:
-                insight = "Productivity and expenses show a moderate relationship."
+                insight = "Продуктивность и расходы связаны умеренно."
         else:
-            insight = "No significant correlation between productivity and entertainment expenses detected."
+            insight = (
+                "Значимой связи между продуктивностью и расходами на развлечения не обнаружено."
+            )
 
-    avg_total = float(np.mean([daily_expenses[d] for d in common_dates])) if common_dates else 0
-    avg_ent = float(np.mean([daily_entertainment.get(d, 0) for d in common_dates])) if common_dates else 0
+    avg_total = float(np.mean([daily_expenses[d] for d in common_dates])) if common_dates else 0.0
+    avg_ent = (
+        float(np.mean([daily_entertainment.get(d, 0) for d in common_dates]))
+        if common_dates
+        else 0.0
+    )
 
     report = ProductivityReport(
         user_id=user_id,
@@ -184,83 +164,49 @@ def forecast_budget():
 
 
 async def _forecast_budget_async():
-    async with httpx.AsyncClient() as client:
-        try:
-            users_resp = await client.get(
-                f"{TASKS_SERVICE_URL}/api/users",
-                timeout=10,
-            )
-            users = users_resp.json()
-        except Exception:
-            users = []
+    async with async_session() as session:
+        user_ids = await fetch_all_user_ids(session)
 
-    for user in users:
-        user_id = user.get("id") if isinstance(user, dict) else user
-        await _forecast_user_budget(user_id)
+    today = date.today()
+    for user_id in user_ids:
+        await _forecast_user_budget(user_id, today)
 
 
-async def _forecast_user_budget(user_id: int):
-    async with httpx.AsyncClient() as client:
-        try:
-            upcoming_tasks_resp = await client.get(
-                f"{TASKS_SERVICE_URL}/api/tasks/upcoming",
-                params={"user_id": user_id},
-                timeout=10,
-            )
-            upcoming_tasks = upcoming_tasks_resp.json()
-        except Exception:
-            upcoming_tasks = []
+async def _forecast_user_budget(user_id: int, today: date):
+    async with async_session() as session:
+        budget_limit, recurring_total, spent_this_month = await fetch_budget_forecast_inputs(
+            session, user_id, today
+        )
 
-        try:
-            upcoming_expenses_resp = await client.get(
-                f"{FINANCE_SERVICE_URL}/api/expenses/upcoming",
-                params={"user_id": user_id},
-                timeout=10,
-            )
-            upcoming_expenses = upcoming_expenses_resp.json()
-        except Exception:
-            upcoming_expenses = []
-
-        try:
-            budget_resp = await client.get(
-                f"{FINANCE_SERVICE_URL}/api/budget",
-                params={"user_id": user_id},
-                timeout=10,
-            )
-            budget_data = budget_resp.json()
-        except Exception:
-            budget_data = {}
-
-    predicted = sum(t.get("estimated_cost", 0) for t in upcoming_tasks) + sum(
-        e.get("amount", 0) for e in upcoming_expenses
-    )
-
-    budget_limit = budget_data.get("monthly_limit", 0)
+    days_in_month = calendar.monthrange(today.year, today.month)[1]
+    days_elapsed = max(today.day, 1)
+    daily_avg = spent_this_month / days_elapsed
+    projected_remaining = daily_avg * max(days_in_month - days_elapsed, 0)
+    predicted = spent_this_month + projected_remaining + recurring_total
 
     if budget_limit > 0:
         ratio = predicted / budget_limit
         if ratio > 0.9:
             risk_level = RiskLevel.HIGH
             recommendation = (
-                "Your predicted expenses exceed 90% of your budget limit. "
-                "Consider reducing discretionary spending."
+                "Прогноз расходов превышает 90% лимита бюджета. "
+                "Рекомендуем сократить необязательные траты."
             )
         elif ratio > 0.7:
             risk_level = RiskLevel.MEDIUM
             recommendation = (
-                "Your predicted expenses are approaching your budget limit. "
-                "Monitor your spending closely."
+                "Прогноз расходов приближается к лимиту бюджета. Следите за тратами."
             )
         else:
             risk_level = RiskLevel.LOW
-            recommendation = "Your budget looks healthy. Keep up the good financial habits."
+            recommendation = "Бюджет в норме. Продолжайте в том же духе."
     else:
         risk_level = RiskLevel.MEDIUM
-        recommendation = "Set a budget limit to enable forecasting and risk assessment."
+        recommendation = "Задайте лимит бюджета, чтобы включить прогноз и оценку рисков."
 
     forecast = BudgetForecast(
         user_id=user_id,
-        forecast_date=date.today(),
+        forecast_date=today,
         predicted_expenses=round(predicted, 2),
         budget_limit=round(budget_limit, 2),
         risk_level=risk_level,

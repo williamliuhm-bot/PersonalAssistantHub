@@ -35,7 +35,7 @@ export default function Layout() {
         component="main"
         sx={{
           flex: 1,
-          ml: isMobile ? 0 : '260px',
+          minWidth: 0,
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
@@ -49,7 +49,15 @@ export default function Layout() {
           </Box>
         )}
 
-        <Box sx={{ flex: 1, p: { xs: 2, md: 3 }, maxWidth: 1400, width: '100%', mx: 'auto' }}>
+        <Box
+          sx={{
+            flex: 1,
+            p: { xs: 2, md: 3 },
+            width: '100%',
+            maxWidth: 1320,
+            mx: 'auto',
+          }}
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -58,6 +66,7 @@ export default function Layout() {
               animate="animate"
               exit="exit"
               transition={{ duration: 0.2, ease: 'easeInOut' }}
+              style={{ width: '100%' }}
             >
               <Outlet />
             </motion.div>

@@ -8,7 +8,6 @@ import {
   Chip,
   CircularProgress,
   Button,
-  Divider,
 } from '@mui/material';
 import {
   Notifications as NotifIcon,
@@ -23,25 +22,19 @@ import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ru';
-import client from '../api/client';
+import { notificationsApi, type Notification } from '../api/notifications';
 
 dayjs.extend(relativeTime);
 dayjs.locale('ru');
 
-interface Notification {
-  id: number;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'success' | 'error';
-  is_read: boolean;
-  created_at: string;
-}
-
-const TYPE_CONFIG = {
+const TYPE_CONFIG: Record<string, { icon: JSX.Element; color: string; label: string }> = {
   info: { icon: <Info />, color: '#2563EB', label: 'Инфо' },
   warning: { icon: <Warning />, color: '#F59E0B', label: 'Предупреждение' },
   error: { icon: <ErrorIcon />, color: '#EF4444', label: 'Ошибка' },
   success: { icon: <CheckCircle />, color: '#10B981', label: 'Успех' },
+  email: { icon: <Info />, color: '#2563EB', label: 'Email' },
+  telegram: { icon: <Info />, color: '#06B6D4', label: 'Telegram' },
+  push: { icon: <Info />, color: '#8B5CF6', label: 'Push' },
 };
 
 const containerVariants = {
@@ -60,9 +53,9 @@ export default function NotificationsPage() {
 
   const fetchNotifications = () => {
     setLoading(true);
-    client.get('/notification/api/notifications')
+    notificationsApi.list()
       .then((r) => {
-        setNotifications(r.data.results || r.data || []);
+        setNotifications(Array.isArray(r.data) ? r.data : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -70,9 +63,9 @@ export default function NotificationsPage() {
 
   useEffect(() => { fetchNotifications(); }, []);
 
-  const handleMarkRead = async (id: number) => {
+  const handleMarkRead = async (id: string) => {
     try {
-      await client.patch(`/notification/api/notifications/${id}`, { is_read: true });
+      await notificationsApi.markRead(id);
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       );
@@ -81,14 +74,14 @@ export default function NotificationsPage() {
 
   const handleMarkAllRead = async () => {
     try {
-      await client.post('/notification/api/notifications/mark-all-read');
+      await notificationsApi.markAllRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     } catch {}
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
-      await client.delete(`/notification/api/notifications/${id}`);
+      await notificationsApi.delete(id);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch {}
   };
@@ -109,11 +102,7 @@ export default function NotificationsPage() {
           )}
         </Box>
         {unreadCount > 0 && (
-          <Button
-            startIcon={<DoneAll />}
-            size="small"
-            onClick={handleMarkAllRead}
-          >
+          <Button startIcon={<DoneAll />} size="small" onClick={handleMarkAllRead}>
             Прочитать все
           </Button>
         )}
@@ -124,9 +113,7 @@ export default function NotificationsPage() {
           <Card>
             <CardContent sx={{ textAlign: 'center', py: 6 }}>
               <NotifIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary">
-                Нет уведомлений
-              </Typography>
+              <Typography variant="h6" color="text.secondary">Нет уведомлений</Typography>
               <Typography variant="body2" color="text.secondary">
                 Здесь будут появляться уведомления о задачах, платежах и других событиях
               </Typography>
@@ -146,9 +133,7 @@ export default function NotificationsPage() {
                 >
                   <CardContent sx={{ py: 2, px: 2.5 }}>
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                      <Box sx={{ color: config.color, mt: 0.3 }}>
-                        {config.icon}
-                      </Box>
+                      <Box sx={{ color: config.color, mt: 0.3 }}>{config.icon}</Box>
                       <Box sx={{ flex: 1 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

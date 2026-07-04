@@ -24,7 +24,13 @@ app.add_middleware(
 
 @app.middleware("http")
 async def jwt_auth_middleware(request: Request, call_next):
-    if request.url.path in ("/health", "/docs", "/openapi.json", "/redoc"):
+    if request.url.path in (
+        "/health",
+        "/docs",
+        "/openapi.json",
+        "/redoc",
+        "/api/events",
+    ):
         return await call_next(request)
 
     auth_header = request.headers.get("Authorization", "")

@@ -1,30 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import {
   Box,
   Card,
   CardContent,
   Typography,
-  Grid,
   Chip,
   CircularProgress,
-  IconButton,
 } from '@mui/material';
 import {
   AccountBalance,
   TrendingUp,
   TrendingDown,
-  CheckCircle,
+  Assignment,
   Whatshot,
   Lightbulb,
-  ArrowForward,
+  CurrencyRuble,
 } from '@mui/icons-material';
+import type { SvgIconComponent } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import type { AxiosResponse } from 'axios';
 import { financeApi, type FinanceReport } from '../api/finance';
 import { tasksApi, type Task, type Habit } from '../api/tasks';
-import { analyticsApi, type Insight } from '../api/analytics';
+import { analyticsApi } from '../api/analytics';
+import { currencySymbol, formatMoney } from '../utils/currency';
+import { buildExpenseBreakdownRub } from '../utils/financeStats';
 
 const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
@@ -41,25 +42,142 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
+function StatCardIcon({
+  icon: Icon,
+  color,
+  bgcolor,
+}: {
+  icon: SvgIconComponent;
+  color: string;
+  bgcolor: string;
+}) {
+  return (
+    <Box
+      sx={{
+        flexShrink: 0,
+        width: '2.2em',
+        height: '2.2em',
+        borderRadius: 2,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor,
+      }}
+    >
+      <Icon sx={{ color, fontSize: '1.35em' }} />
+    </Box>
+  );
+}
+
+function MoneyAmount({
+  amount,
+  currency,
+  prefix = '',
+  color,
+}: {
+  amount: number;
+  currency?: string;
+  prefix?: string;
+  color?: string;
+}) {
+  return (
+    <Box
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'baseline',
+        gap: '0.25em',
+        whiteSpace: 'nowrap',
+        color,
+        flexShrink: 0,
+      }}
+    >
+      {prefix ? (
+        <Box component="span" sx={{ fontWeight: 700, fontSize: '1.65em', lineHeight: 1.15, flexShrink: 0 }}>
+          {prefix}
+        </Box>
+      ) : null}
+      <Box component="span" sx={{ fontWeight: 700, fontSize: '1.65em', lineHeight: 1.15 }}>
+        {Number(amount).toLocaleString()}
+      </Box>
+      <Box component="span" sx={{ fontSize: '1.05em', color: color ? 'inherit' : 'text.secondary', flexShrink: 0, opacity: color ? 0.85 : 1 }}>
+        {currencySymbol(currency)}
+      </Box>
+    </Box>
+  );
+}
+
+const cardContentSx = {
+  pl: 'clamp(16px, 2cqw, 28px)',
+  pr: 'clamp(14px, 1.8cqw, 24px)',
+  pt: 'clamp(16px, 1.8cqw, 24px)',
+  pb: 'clamp(16px, 1.8cqw, 24px)',
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  '&:last-child': { pb: 'clamp(16px, 1.8cqw, 24px)' },
+} as const;
+
+const statCardSx = {
+  display: 'flex',
+  flexDirection: 'column',
+  width: '100%',
+  minWidth: 0,
+  minHeight: 'clamp(148px, 11cqw, 210px)',
+  height: '100%',
+} as const;
+
+function DashboardStatCard({
+  children,
+  onClick,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <motion.div variants={itemVariants} style={{ height: '100%' }}>
+      <Card onClick={onClick} sx={{ ...statCardSx, cursor: onClick ? 'pointer' : 'default' }}>
+        <CardContent sx={cardContentSx}>{children}</CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [report, setReport] = useState<FinanceReport | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
-  const [insights, setInsights] = useState<Insight[]>([]);
+  const [insightText, setInsightText] = useState<string | null>(null);
+  const [pieData, setPieData] = useState<{ name: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       financeApi.getReports().catch(() => null),
+      financeApi.getTransactions({ per_page: 500 }).catch(() => null),
+      financeApi.getAccounts().catch(() => null),
       tasksApi.getTasks().catch(() => ({ data: [] as Task[] }) as AxiosResponse<Task[]>),
       tasksApi.getHabits().catch(() => ({ data: [] as Habit[] }) as AxiosResponse<Habit[]>),
-      analyticsApi.getInsights().catch(() => ({ data: [] as Insight[] }) as AxiosResponse<Insight[]>),
-    ]).then(([r, t, h, i]) => {
+      analyticsApi.getInsights().catch(() => null),
+    ]).then(([r, txResp, accResp, t, h, insights]) => {
       if (r) setReport(r.data);
+      const tx = txResp?.data;
+      const accounts = accResp?.data;
+      if (tx) {
+        setPieData(buildExpenseBreakdownRub(
+          tx,
+          'month',
+          (item) =>
+            item.account_currency ||
+            accounts?.find((a) => a.id === item.account_id)?.currency ||
+            'RUB',
+        ));
+      }
       setTasks(t.data || []);
       setHabits(h.data || []);
-      setInsights(i.data || []);
+      if (insights?.data?.insight) {
+        setInsightText(insights.data.insight);
+      }
       setLoading(false);
     });
   }, []);
@@ -73,194 +191,191 @@ export default function Dashboard() {
   }
 
   const totalBalance = report?.total_balance ?? 0;
-  const monthlyIncome = report?.monthly_income ?? 0;
-  const monthlyExpenses = report?.monthly_expenses ?? 0;
+  const balancesByCurrency = report?.balances_by_currency ?? [];
+  const monthlyByCurrency = report?.monthly_by_currency ?? [];
+  const primaryMonthly = monthlyByCurrency[0];
+  const monthlyIncome = primaryMonthly?.income ?? report?.monthly_income ?? 0;
+  const monthlyExpenses = primaryMonthly?.expenses ?? report?.monthly_expenses ?? 0;
+  const incomeCurrency = primaryMonthly?.currency;
+  const expenseCurrency = primaryMonthly?.currency;
   const tasksCompleted = tasks.filter((t) => t.status === 'done').length;
   const tasksActive = tasks.filter((t) => t.status !== 'done').length;
   const maxStreak = habits.length > 0 ? Math.max(...habits.map((h) => h.streak)) : 0;
 
-  const pieData: { name: string; value: number }[] = [];
-
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: 700 }}>
-        Dashboard
-      </Typography>
+      <Box
+        sx={{
+          containerType: 'inline-size',
+          width: '100%',
+          fontSize: 'clamp(0.72rem, 1.15cqw, 0.875rem)',
+        }}
+      >
+        <Typography
+          variant="h4"
+          sx={{
+            mb: 3,
+            fontWeight: 700,
+            fontSize: 'clamp(1.35rem, 3cqw, 2rem)',
+            textAlign: 'center',
+          }}
+        >
+          Dashboard
+        </Typography>
 
-      <Grid container spacing={2.5}>
-        <Grid item xs={12} md={8}>
-          <Grid container spacing={2.5}>
-            <Grid item xs={12} sm={4}>
-              <motion.div variants={itemVariants}>
-                <Card
-                  sx={{ cursor: 'pointer' }}
-                  onClick={() => navigate('/finance')}
-                >
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Общий баланс
-                      </Typography>
-                      <AccountBalance sx={{ color: 'primary.main', fontSize: 20 }} />
-                    </Box>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      {totalBalance.toLocaleString()} ₽
-                    </Typography>
-                    <Chip
-                      label={totalBalance >= 0 ? 'Положительный' : 'Отрицательный'}
-                      color={totalBalance >= 0 ? 'success' : 'error'}
-                      size="small"
-                      sx={{ mt: 1, fontWeight: 500 }}
-                    />
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <motion.div variants={itemVariants}>
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Доходы
-                      </Typography>
-                      <TrendingUp sx={{ color: 'success.main', fontSize: 20 }} />
-                    </Box>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: 'success.main' }}>
-                      +{monthlyIncome.toLocaleString()} ₽
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                      За текущий месяц
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <motion.div variants={itemVariants}>
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Расходы
-                      </Typography>
-                      <TrendingDown sx={{ color: 'error.main', fontSize: 20 }} />
-                    </Box>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: 'error.main' }}>
-                      -{monthlyExpenses.toLocaleString()} ₽
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                      За текущий месяц
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Grid>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'clamp(16px, 2cqw, 28px)', width: '100%' }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(2, minmax(0, 1fr))',
+                sm: 'repeat(3, minmax(0, 1fr))',
+                lg: 'repeat(5, minmax(0, 1fr))',
+              },
+              gap: 'clamp(10px, 1.5cqw, 24px)',
+              width: '100%',
+            }}
+          >
+          <DashboardStatCard onClick={() => navigate('/finance')}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5em', mb: '0.85em', flexWrap: 'nowrap' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9em', lineHeight: 1.3 }}>
+                Общий баланс
+              </Typography>
+              <StatCardIcon icon={AccountBalance} color="primary.main" bgcolor="rgba(37, 99, 235, 0.12)" />
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '0.45em', alignItems: 'baseline', rowGap: '0.25em' }}>
+              {balancesByCurrency.length > 0 ? (
+                balancesByCurrency.map((b) => (
+                  <MoneyAmount key={b.currency} amount={b.amount} currency={b.currency} />
+                ))
+              ) : (
+                <MoneyAmount amount={totalBalance} />
+              )}
+            </Box>
+            <Chip
+              label={totalBalance >= 0 ? 'Плюс' : 'Минус'}
+              color={totalBalance >= 0 ? 'success' : 'error'}
+              size="small"
+              sx={{ mt: 'auto', alignSelf: 'flex-start', fontSize: '0.75em', fontWeight: 500, maxWidth: '100%' }}
+            />
+          </DashboardStatCard>
 
-            <Grid item xs={12} sm={6}>
-              <motion.div variants={itemVariants}>
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Задачи
-                      </Typography>
-                      <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 3 }}>
-                      <Box>
-                        <Typography variant="h5" sx={{ fontWeight: 700, color: 'success.main' }}>
-                          {tasksCompleted}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Выполнено
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                          {tasksActive}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Активных
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <motion.div variants={itemVariants}>
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Привычки
-                      </Typography>
-                      <Whatshot sx={{ color: 'warning.main', fontSize: 20 }} />
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: 'warning.main' }}>
-                        {maxStreak}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        дней максимальная серия
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Grid>
-          </Grid>
-        </Grid>
+          <DashboardStatCard>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5em', mb: '0.85em', flexWrap: 'nowrap' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9em' }}>Доходы</Typography>
+              <StatCardIcon icon={TrendingUp} color="success.main" bgcolor="rgba(16, 185, 129, 0.12)" />
+            </Box>
+            <MoneyAmount amount={monthlyIncome} currency={incomeCurrency} prefix="+" color="success.main" />
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 'auto', pt: '0.75em', display: 'block', fontSize: '0.85em', lineHeight: 1.3 }}>
+              За месяц
+            </Typography>
+          </DashboardStatCard>
 
-        <Grid item xs={12} md={4}>
-          <motion.div variants={itemVariants}>
-            <Card sx={{ height: '100%' }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Расходы по категориям
-                  </Typography>
-                </Box>
-                {pieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={220}>
+          <DashboardStatCard>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5em', mb: '0.85em', flexWrap: 'nowrap' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9em' }}>Расходы</Typography>
+              <StatCardIcon icon={TrendingDown} color="error.main" bgcolor="rgba(239, 68, 68, 0.12)" />
+            </Box>
+            <MoneyAmount amount={monthlyExpenses} currency={expenseCurrency} prefix="-" color="error.main" />
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 'auto', pt: '0.75em', display: 'block', fontSize: '0.85em', lineHeight: 1.3 }}>
+              За месяц
+            </Typography>
+          </DashboardStatCard>
+
+          <DashboardStatCard>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5em', mb: '0.85em', flexWrap: 'nowrap' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9em' }}>Задачи</Typography>
+              <StatCardIcon icon={Assignment} color="primary.main" bgcolor="rgba(37, 99, 235, 0.12)" />
+            </Box>
+            <Box sx={{ display: 'flex', gap: '1.25em', flexWrap: 'nowrap' }}>
+              <Box>
+                <Typography sx={{ fontWeight: 700, color: 'success.main', fontSize: '1.65em', lineHeight: 1.15 }}>
+                  {tasksCompleted}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.85em', whiteSpace: 'nowrap' }}>
+                  Готово
+                </Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: '1.65em', lineHeight: 1.15 }}>{tasksActive}</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.85em', whiteSpace: 'nowrap' }}>
+                  Активно
+                </Typography>
+              </Box>
+            </Box>
+          </DashboardStatCard>
+
+          <DashboardStatCard>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5em', mb: '0.85em', flexWrap: 'nowrap' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9em' }}>Привычки</Typography>
+              <StatCardIcon icon={Whatshot} color="warning.main" bgcolor="rgba(245, 158, 11, 0.12)" />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: '0.4em', flexWrap: 'wrap' }}>
+              <Typography sx={{ fontWeight: 700, color: 'warning.main', fontSize: '1.65em', lineHeight: 1.15, flexShrink: 0 }}>
+                {maxStreak}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85em', lineHeight: 1.3 }}>
+                дней серия
+              </Typography>
+            </Box>
+          </DashboardStatCard>
+        </Box>
+
+        <motion.div variants={itemVariants} style={{ width: '100%', minWidth: 0 }}>
+          <Card sx={{ ...statCardSx, minHeight: 'auto' }}>
+            <CardContent sx={{ ...cardContentSx, height: '100%' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 2, flexWrap: 'nowrap' }}>
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, fontSize: '1.05em' }}>
+                  Расходы по категориям
+                </Typography>
+                <StatCardIcon icon={CurrencyRuble} color="primary.main" bgcolor="rgba(37, 99, 235, 0.12)" />
+              </Box>
+              {pieData.length > 0 ? (
+                <Box sx={{ width: '100%', height: 'clamp(220px, 22cqw, 340px)' }}>
+                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={85}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {pieData.map((_, idx) => (
-                          <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          background: '#1E293B',
-                          border: '1px solid rgba(148, 163, 184, 0.12)',
-                          borderRadius: 8,
-                        }}
-                        formatter={(value: number) => `${value.toLocaleString()} ₽`}
-                      />
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="55%"
+                      outerRadius="85%"
+                      paddingAngle={3}
+                      dataKey="value"
+                      nameKey="name"
+                    >
+                      {pieData.map((_, idx) => (
+                        <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: '#1E293B',
+                        border: '1px solid rgba(148, 163, 184, 0.12)',
+                        borderRadius: 8,
+                      }}
+                      formatter={(value: number) => formatMoney(value, 'RUB')}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value) => <span style={{ color: '#94A3B8', fontSize: 12 }}>{value}</span>}
+                    />
                     </PieChart>
                   </ResponsiveContainer>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>
-                    Нет данных
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </Grid>
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>
+                  Нет данных
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </Box>
 
-        {insights.length > 0 && (
-          <Grid item xs={12}>
+        {insightText && (
+          <Box sx={{ mt: 2.5 }}>
             <motion.div variants={itemVariants}>
               <Card
                 sx={{
@@ -269,28 +384,21 @@ export default function Dashboard() {
                 }}
               >
                 <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <Lightbulb sx={{ color: '#F59E0B' }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <StatCardIcon icon={Lightbulb} color="#F59E0B" bgcolor="rgba(245, 158, 11, 0.12)" />
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      AI Инсайты
+                      AI Инсайт
                     </Typography>
                   </Box>
-                  {insights.slice(0, 3).map((insight) => (
-                    <Box key={insight.id} sx={{ mb: 1.5, '&:last-child': { mb: 0 } }}>
-                      <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
-                        {insight.title}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {insight.description}
-                      </Typography>
-                    </Box>
-                  ))}
+                  <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                    {insightText}
+                  </Typography>
                 </CardContent>
               </Card>
             </motion.div>
-          </Grid>
+          </Box>
         )}
-      </Grid>
+      </Box>
     </motion.div>
   );
 }

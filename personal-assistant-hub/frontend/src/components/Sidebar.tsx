@@ -128,7 +128,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
       <List sx={{ px: 1, py: 1 }}>
         <ListItemButton
-          sx={{ borderRadius: 2, color: 'text.secondary', '&:hover': { bgcolor: 'rgba(148, 163, 184, 0.08)' } }}
+          onClick={() => handleNavigate('/settings')}
+          sx={{
+            borderRadius: 2,
+            color: location.pathname === '/settings' ? 'primary.main' : 'text.secondary',
+            bgcolor: location.pathname === '/settings' ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+            '&:hover': { bgcolor: location.pathname === '/settings' ? 'rgba(37, 99, 235, 0.15)' : 'rgba(148, 163, 184, 0.08)' },
+          }}
         >
           <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
             <Settings />

@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import Account
 from app.schemas import AccountCreate, AccountUpdate, AccountResponse
-from app.cache import cache_get, cache_set, cache_invalidate
 from app.auth import get_current_user_id
 
 router = APIRouter(tags=["accounts"])
@@ -15,15 +14,10 @@ async def list_accounts(
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    cache_key = f"accounts:{user_id}"
-    cached = await cache_get(cache_key)
-    if cached:
-        return cached
-
-    result = await db.execute(select(Account).where(Account.user_id == user_id))
-    accounts = result.scalars().all()
-    await cache_set(cache_key, [a.__dict__ for a in accounts])
-    return accounts
+    result = await db.execute(
+        select(Account).where(Account.user_id == user_id).order_by(Account.id)
+    )
+    return result.scalars().all()
 
 
 @router.post("/accounts", response_model=AccountResponse, status_code=201)
@@ -42,7 +36,6 @@ async def create_account(
     db.add(account)
     await db.commit()
     await db.refresh(account)
-    await cache_invalidate(f"accounts:{user_id}")
     return account
 
 
@@ -81,7 +74,6 @@ async def update_account(
 
     await db.commit()
     await db.refresh(account)
-    await cache_invalidate(f"accounts:{user_id}")
     return account
 
 
@@ -100,4 +92,3 @@ async def delete_account(
 
     await db.delete(account)
     await db.commit()
-    await cache_invalidate(f"accounts:{user_id}")

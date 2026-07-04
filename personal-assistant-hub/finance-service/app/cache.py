@@ -35,6 +35,14 @@ async def cache_set(key: str, value: Any, ttl: int = CACHE_TTL) -> None:
         pass
 
 
+async def cache_delete(key: str) -> None:
+    try:
+        r = await get_redis()
+        await r.delete(key)
+    except Exception:
+        pass
+
+
 async def cache_invalidate(pattern: str) -> None:
     try:
         r = await get_redis()

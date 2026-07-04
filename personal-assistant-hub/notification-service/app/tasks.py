@@ -70,32 +70,23 @@ def send_email_notification(user_id: str, title: str, message: str):
 @celery_app.task
 def send_telegram_notification(user_id: str, title: str, message: str):
     async def _execute():
-        engine = _get_engine()
-        try:
-            async with engine.connect() as conn:
-                result = await conn.execute(
-                    text("SELECT chat_id FROM user_telegram_links WHERE user_id = :user_id"),
-                    {"user_id": user_id},
-                )
-                row = result.fetchone()
-                if row is None:
-                    logger.warning("User %s has no telegram link for notification", user_id)
-                    return
-                chat_id = row[0]
+        token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+        chat_id = os.getenv("TELEGRAM_DEFAULT_CHAT_ID", "")
+        if not token or not chat_id:
+            logger.warning(
+                "Telegram not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_DEFAULT_CHAT_ID). "
+                "Skipping notification for user %s: %s",
+                user_id,
+                title,
+            )
+            return
 
-            token = os.getenv("TELEGRAM_BOT_TOKEN", "")
-            if not token:
-                logger.warning("TELEGRAM_BOT_TOKEN not configured")
-                return
+        from telegram import Bot
 
-            from telegram import Bot
-
-            bot = Bot(token=token)
-            text_msg = f"*{title}*\n\n{message}"
-            await bot.send_message(chat_id=chat_id, text=text_msg, parse_mode="Markdown")
-            logger.info("Telegram message sent to chat %s: %s", chat_id, title)
-        finally:
-            await engine.dispose()
+        bot = Bot(token=token)
+        text_msg = f"*{title}*\n\n{message}"
+        await bot.send_message(chat_id=chat_id, text=text_msg, parse_mode="Markdown")
+        logger.info("Telegram message sent for user %s: %s", user_id, title)
 
     asyncio.run(_execute())
 

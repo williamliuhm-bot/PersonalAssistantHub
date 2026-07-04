@@ -5,6 +5,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user_id
+from app.insight_i18n import localize_insight, localize_recommendation
 from app.database import get_db
 from app.models import BudgetForecast, ProductivityReport
 from app.schemas import (
@@ -32,7 +33,11 @@ async def get_productivity_reports(
         .order_by(desc(ProductivityReport.report_date))
         .limit(30)
     )
-    return result.scalars().all()
+    reports = result.scalars().all()
+    for report in reports:
+        if report.insight:
+            report.insight = localize_insight(report.insight)
+    return reports
 
 
 @router.get(
@@ -50,7 +55,11 @@ async def get_budget_forecasts(
         .order_by(desc(BudgetForecast.forecast_date))
         .limit(30)
     )
-    return result.scalars().all()
+    forecasts = result.scalars().all()
+    for forecast in forecasts:
+        if forecast.recommendation:
+            forecast.recommendation = localize_recommendation(forecast.recommendation)
+    return forecasts
 
 
 @router.get("/api/analytics/correlation", response_model=CorrelationData)
@@ -93,5 +102,5 @@ async def get_insights(
         .limit(1)
     )
     report = result.scalar_one_or_none()
-    insight_text = report.insight if report else "No insights available yet."
+    insight_text = localize_insight(report.insight if report else None)
     return InsightOut(insight=insight_text)

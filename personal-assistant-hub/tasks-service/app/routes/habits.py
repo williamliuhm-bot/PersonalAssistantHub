@@ -114,15 +114,32 @@ async def log_habit(
 
     prev_completed = habit.last_completed
 
-    if habit.frequency == "daily":
+    freq = (habit.frequency or "").lower()
+
+    if freq == "daily":
         if prev_completed and (now - prev_completed).days <= 1:
             habit.streak += 1
         else:
             habit.streak = 1
-    elif habit.frequency == "weekly":
-        habit.streak += 1
-    elif habit.frequency == "monthly":
-        habit.streak += 1
+    elif freq == "weekly":
+        if prev_completed:
+            delta = (today - prev_completed.date()).days
+            if 0 < delta <= 7:
+                habit.streak += 1
+            else:
+                habit.streak = 1
+        else:
+            habit.streak = 1
+    elif freq == "monthly":
+        if prev_completed:
+            prev_d = prev_completed.date()
+            months_diff = (today.year - prev_d.year) * 12 + (today.month - prev_d.month)
+            if months_diff == 1:
+                habit.streak += 1
+            else:
+                habit.streak = 1
+        else:
+            habit.streak = 1
 
     habit.last_completed = now
 
@@ -134,6 +151,8 @@ async def log_habit(
 @router.get("/{habit_id}/calendar")
 async def get_habit_calendar(
     habit_id: int,
+    year: int | None = None,
+    month: int | None = None,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
@@ -143,11 +162,16 @@ async def get_habit_calendar(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Habit not found")
 
     today = datetime.date.today()
-    first_day = today.replace(day=1)
-    if today.month == 12:
-        last_day = today.replace(year=today.year + 1, month=1, day=1) - datetime.timedelta(days=1)
+    year = year or today.year
+    month = month or today.month
+    if month < 1 or month > 12:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid month")
+
+    first_day = datetime.date(year, month, 1)
+    if month == 12:
+        last_day = datetime.date(year + 1, 1, 1) - datetime.timedelta(days=1)
     else:
-        last_day = today.replace(month=today.month + 1, day=1) - datetime.timedelta(days=1)
+        last_day = datetime.date(year, month + 1, 1) - datetime.timedelta(days=1)
 
     logs_result = await db.execute(
         select(HabitLog.completed_date).where(
@@ -165,4 +189,4 @@ async def get_habit_calendar(
         days.append(CalendarDay(date=current.isoformat(), completed=current in completed_dates))
         current += datetime.timedelta(days=1)
 
-    return {"habit_id": habit_id, "year": today.year, "month": today.month, "days": days}
+    return {"habit_id": habit_id, "year": year, "month": month, "days": days}

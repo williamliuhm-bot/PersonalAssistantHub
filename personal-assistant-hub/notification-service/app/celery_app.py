@@ -14,3 +14,7 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
 )
+
+celery_app.autodiscover_tasks(["app"])
+
+import app.tasks  # noqa: E402, F401

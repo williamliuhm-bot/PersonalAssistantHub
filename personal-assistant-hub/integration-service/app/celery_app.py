@@ -1,4 +1,5 @@
 import os
+
 from celery import Celery
 
 celery_app = Celery(
@@ -14,3 +15,8 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
 )
+
+celery_app.autodiscover_tasks(["app"])
+
+import app.celery_beat  # noqa: E402, F401
+import app.tasks  # noqa: E402, F401

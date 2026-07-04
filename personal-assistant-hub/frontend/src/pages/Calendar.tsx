@@ -5,8 +5,6 @@ import {
   CardContent,
   Typography,
   IconButton,
-  Chip,
-  Grid,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -15,10 +13,12 @@ import {
   Button,
 } from '@mui/material';
 import { ChevronLeft, ChevronRight, Today } from '@mui/icons-material';
-import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
+import 'dayjs/locale/ru';
 import { financeApi, type Transaction } from '../api/finance';
 import { tasksApi, type Task, type Habit } from '../api/tasks';
+
+dayjs.locale('ru');
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
@@ -33,44 +33,100 @@ export default function Calendar() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [habitCompletedDates, setHabitCompletedDates] = useState<Record<number, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+  const monthYear = currentDate.year();
+  const monthIndex = currentDate.month();
   const startOfMonth = currentDate.startOf('month');
-  const endOfMonth = currentDate.endOf('month');
 
   useEffect(() => {
+    let cancelled = false;
+    const monthStart = dayjs().year(monthYear).month(monthIndex).startOf('month');
+    const monthEnd = monthStart.endOf('month');
+
     setLoading(true);
-    Promise.all([
+    Promise.allSettled([
       financeApi.getTransactions({
-        start_date: startOfMonth.format('YYYY-MM-DD'),
-        end_date: endOfMonth.format('YYYY-MM-DD'),
+        date_from: monthStart.format('YYYY-MM-DD'),
+        date_to: monthEnd.format('YYYY-MM-DD'),
       }),
       tasksApi.getTasks(),
       tasksApi.getHabits(),
-    ]).then(([t, ts, h]) => {
-      setTransactions(t.data.results || []);
-      setTasks(ts.data);
-      setHabits(h.data);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [currentDate]);
+    ])
+      .then(async (results) => {
+        if (cancelled) return;
+
+        const txResult = results[0];
+        const tasksResult = results[1];
+        const habitsResult = results[2];
+
+        setTransactions(
+          txResult.status === 'fulfilled' && Array.isArray(txResult.value.data)
+            ? txResult.value.data
+            : [],
+        );
+        setTasks(
+          tasksResult.status === 'fulfilled' && Array.isArray(tasksResult.value.data)
+            ? tasksResult.value.data
+            : [],
+        );
+
+        const habitList =
+          habitsResult.status === 'fulfilled' && Array.isArray(habitsResult.value.data)
+            ? habitsResult.value.data
+            : [];
+        setHabits(habitList);
+
+        if (habitList.length === 0) {
+          setHabitCompletedDates({});
+          return;
+        }
+
+        const calendarResults = await Promise.all(
+          habitList.map((habit) =>
+            tasksApi
+              .getHabitCalendar(habit.id, monthYear, monthIndex + 1)
+              .catch(() => null),
+          ),
+        );
+
+        if (cancelled) return;
+
+        const datesMap: Record<number, string[]> = {};
+        calendarResults.forEach((result, idx) => {
+          if (result?.data?.days) {
+            datesMap[habitList[idx].id] = result.data.days
+              .filter((d) => d.completed)
+              .map((d) => d.date);
+          }
+        });
+        setHabitCompletedDates(datesMap);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [monthYear, monthIndex]);
 
   const getDaysInMonth = () => {
     const daysInMonth = currentDate.daysInMonth();
-    const firstDayOfWeek = startOfMonth.day() || 7;
-    const days: (number | null)[] = Array(firstDayOfWeek - 1).fill(null);
-    for (let i = 1; i <= daysInMonth; i++) {
+    const firstDayOfWeek = (startOfMonth.day() + 6) % 7;
+    const days: (number | null)[] = Array(firstDayOfWeek).fill(null);
+    for (let i = 1; i <= daysInMonth; i += 1) {
       days.push(i);
     }
     return days;
   };
 
   const getEventsForDate = (day: number) => {
-    const dateStr = currentDate.date(day).format('YYYY-MM-DD');
     const dateStrFixed = currentDate.date(day).format('YYYY-MM-DD');
     const dayTasks = tasks.filter((t) => t.deadline?.startsWith(dateStrFixed));
-    const dayHabits = habits.filter((h) => h.completed_dates?.includes(dateStrFixed));
+    const dayHabits = habits.filter((h) => (habitCompletedDates[h.id] || []).includes(dateStrFixed));
     const dayPayments = transactions.filter((t) => t.date.startsWith(dateStrFixed));
     return { tasks: dayTasks, habits: dayHabits, payments: dayPayments };
   };
@@ -90,58 +146,78 @@ export default function Calendar() {
 
   const selectedDayEvents = selectedDate
     ? (() => {
-        const day = parseInt(selectedDate.split('-')[2]);
+        const day = parseInt(selectedDate.split('-')[2], 10);
         return getEventsForDate(day);
       })()
     : null;
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ width: '100%' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>Календарь</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton onClick={() => navigateMonth(-1)}><ChevronLeft /></IconButton>
-          <Typography variant="h6" sx={{ minWidth: 180, textAlign: 'center', fontWeight: 600 }}>
+          <IconButton onClick={() => navigateMonth(-1)} aria-label="Предыдущий месяц"><ChevronLeft /></IconButton>
+          <Typography variant="h6" sx={{ minWidth: 180, textAlign: 'center', fontWeight: 600, textTransform: 'capitalize' }}>
             {currentDate.format('MMMM YYYY')}
           </Typography>
-          <IconButton onClick={() => navigateMonth(1)}><ChevronRight /></IconButton>
-          <IconButton onClick={goToday}><Today /></IconButton>
+          <IconButton onClick={() => navigateMonth(1)} aria-label="Следующий месяц"><ChevronRight /></IconButton>
+          <IconButton onClick={goToday} aria-label="Сегодня"><Today /></IconButton>
         </Box>
       </Box>
 
       <Card>
         <CardContent sx={{ p: 2 }}>
-          <Grid container spacing={0}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+              mb: 0.5,
+            }}
+          >
             {WEEKDAYS.map((day) => (
-              <Grid item xs={12 / 7} key={day} sx={{ textAlign: 'center', py: 1 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                  {day}
-                </Typography>
-              </Grid>
+              <Typography key={day} variant="caption" color="text.secondary" sx={{ textAlign: 'center', py: 1, fontWeight: 600 }}>
+                {day}
+              </Typography>
             ))}
-          </Grid>
+          </Box>
 
-          <Grid container spacing={0}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+              borderTop: '1px solid',
+              borderLeft: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
             {days.map((day, idx) => {
               if (day === null) {
-                return <Grid item xs={12 / 7} key={`empty-${idx}`} sx={{ minHeight: 100 }} />;
+                return (
+                  <Box
+                    key={`empty-${idx}`}
+                    sx={{
+                      minHeight: 100,
+                      borderRight: '1px solid',
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: 'rgba(148, 163, 184, 0.04)',
+                    }}
+                  />
+                );
               }
 
               const dateStr = currentDate.date(day).format('YYYY-MM-DD');
               const events = getEventsForDate(day);
               const isToday = dateStr === today;
-              const totalEvents = events.tasks.length + events.habits.length + events.payments.length;
 
               return (
-                <Grid
-                  item
-                  xs={12 / 7}
+                <Box
                   key={dateStr}
                   sx={{
                     minHeight: 100,
-                    p: 0.5,
-                    borderTop: '1px solid',
-                    borderRight: idx % 7 === 6 ? 'none' : '1px solid',
+                    p: 0.75,
+                    borderRight: '1px solid',
+                    borderBottom: '1px solid',
                     borderColor: 'divider',
                     cursor: 'pointer',
                     transition: 'background 0.2s',
@@ -165,15 +241,7 @@ export default function Calendar() {
                   {events.tasks.length > 0 && (
                     <Box sx={{ display: 'flex', gap: 0.3, flexWrap: 'wrap', mb: 0.3 }}>
                       {events.tasks.slice(0, 2).map((t) => (
-                        <Box
-                          key={t.id}
-                          sx={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            bgcolor: TYPE_COLORS.task,
-                          }}
-                        />
+                        <Box key={t.id} sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: TYPE_COLORS.task }} />
                       ))}
                       {events.tasks.length > 2 && (
                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: 9 }}>
@@ -185,32 +253,21 @@ export default function Calendar() {
                   {events.habits.length > 0 && (
                     <Box sx={{ display: 'flex', gap: 0.3, flexWrap: 'wrap', mb: 0.3 }}>
                       {events.habits.slice(0, 2).map((h) => (
-                        <Box
-                          key={h.id}
-                          sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: TYPE_COLORS.habit }}
-                        />
+                        <Box key={h.id} sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: TYPE_COLORS.habit }} />
                       ))}
                     </Box>
                   )}
                   {events.payments.length > 0 && (
                     <Box sx={{ display: 'flex', gap: 0.3, flexWrap: 'wrap' }}>
                       {events.payments.slice(0, 2).map((p) => (
-                        <Box
-                          key={p.id}
-                          sx={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            bgcolor: TYPE_COLORS.payment,
-                          }}
-                        />
+                        <Box key={p.id} sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: TYPE_COLORS.payment }} />
                       ))}
                     </Box>
                   )}
-                </Grid>
+                </Box>
               );
             })}
-          </Grid>
+          </Box>
         </CardContent>
       </Card>
 
@@ -274,6 +331,6 @@ export default function Calendar() {
           <Button onClick={() => setSelectedDate(null)}>Закрыть</Button>
         </DialogActions>
       </Dialog>
-    </motion.div>
+    </Box>
   );
 }

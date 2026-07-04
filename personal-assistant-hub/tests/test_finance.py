@@ -85,7 +85,7 @@ async def test_list_accounts(client: AsyncClient):
 async def test_create_transaction_updates_balance(client: AsyncClient):
     acct = await client.post("/api/accounts", json={"name": "Wallet", "type": "cash", "balance": 1000})
     acct_id = acct.json()["id"]
-    cat = await client.post("/api/categories", json={"name": "Food", "type": "Expense"})
+    cat = await client.post("/api/categories", json={"name": "Food", "type": "expense"})
     cat_id = cat.json()["id"]
     await client.post("/api/transactions", json={
         "account_id": acct_id, "category_id": cat_id, "amount": 50.00,
@@ -97,7 +97,7 @@ async def test_create_transaction_updates_balance(client: AsyncClient):
 
 async def test_budget_progress_calculation(client: AsyncClient):
     acct = await client.post("/api/accounts", json={"name": "Wallet", "type": "cash", "balance": 5000})
-    cat = await client.post("/api/categories", json={"name": "Food", "type": "Expense"})
+    cat = await client.post("/api/categories", json={"name": "Food", "type": "expense"})
     budget = await client.post("/api/budgets", json={
         "category_id": cat.json()["id"], "limit_amount": 1000, "period": "monthly",
     })

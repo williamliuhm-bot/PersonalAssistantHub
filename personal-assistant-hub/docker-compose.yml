@@ -74,6 +74,10 @@ services:
       REDIS_URL: redis://redis:6379/2
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-super-secret-key-2024}
       JWT_ALGORITHM: HS256
+      INTEGRATION_SERVICE_URL: http://integration-service:8005
+      RATE_USD_RUB: ${RATE_USD_RUB:-90}
+      RATE_EUR_RUB: ${RATE_EUR_RUB:-98}
+      RATE_GBP_RUB: ${RATE_GBP_RUB:-115}
     depends_on:
       postgres:
         condition: service_healthy
@@ -148,12 +152,37 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+        VITE_RATE_USD_RUB: ${RATE_USD_RUB:-90}
+        VITE_RATE_EUR_RUB: ${RATE_EUR_RUB:-98}
+        VITE_RATE_GBP_RUB: ${RATE_GBP_RUB:-115}
     ports:
       - "3000:80"
-    environment:
-      VITE_API_URL: http://localhost:8000
     depends_on:
       - api-gateway
+    restart: always
+
+  notification-celery-worker:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    command: celery -A app.celery_app worker --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+asyncpg://app:app_secret_2024@postgres:5432/personal_assistant_hub
+      REDIS_URL: redis://redis:6379/4
+      CELERY_BROKER_URL: redis://redis:6379/5
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_DEFAULT_CHAT_ID: ${TELEGRAM_DEFAULT_CHAT_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: always
 
   celery-worker:

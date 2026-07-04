@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date as Date, datetime
 from decimal import Decimal
 from typing import Optional
 
@@ -76,7 +76,7 @@ class TransactionCreate(BaseModel):
     amount: Decimal
     description: Optional[str] = None
     transaction_type: str
-    date: Optional[date] = None
+    date: Optional[Date] = None
     is_recurring: bool = False
     recurring_day: Optional[int] = None
 
@@ -88,7 +88,7 @@ class TransactionResponse(BaseModel):
     amount: Decimal
     description: Optional[str] = None
     transaction_type: str
-    date: date
+    date: Date
     is_recurring: bool
     recurring_day: Optional[int] = None
     created_at: datetime
@@ -132,7 +132,7 @@ class TaskCreate(BaseModel):
     description: Optional[str] = None
     priority: str = "MEDIUM"
     status: str = "TODO"
-    deadline: Optional[date] = None
+    deadline: Optional[Date] = None
     project_id: Optional[int] = None
 
 
@@ -141,7 +141,7 @@ class TaskUpdate(BaseModel):
     description: Optional[str] = None
     priority: Optional[str] = None
     status: Optional[str] = None
-    deadline: Optional[date] = None
+    deadline: Optional[Date] = None
     project_id: Optional[int] = None
     order_index: Optional[int] = None
 
@@ -152,7 +152,7 @@ class TaskResponse(BaseModel):
     description: Optional[str] = None
     priority: str
     status: str
-    deadline: Optional[date] = None
+    deadline: Optional[Date] = None
     project_id: Optional[int] = None
     order_index: int
     created_at: datetime
@@ -173,7 +173,7 @@ class HabitResponse(BaseModel):
     description: Optional[str] = None
     frequency: str
     streak: int
-    last_completed: Optional[date] = None
+    last_completed: Optional[Date] = None
     color: Optional[str] = None
     created_at: datetime
 
@@ -182,7 +182,7 @@ class HabitResponse(BaseModel):
 
 class HabitLogCreate(BaseModel):
     habit_id: int
-    completed_date: date
+    completed_date: Date
 
 
 class NotificationResponse(BaseModel):

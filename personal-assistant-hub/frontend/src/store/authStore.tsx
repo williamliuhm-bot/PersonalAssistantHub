@@ -36,10 +36,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    const refreshToken = localStorage.getItem('refresh_token') || '';
+    const accessToken = localStorage.getItem('access_token') || '';
+    if (refreshToken) authApi.logout(refreshToken).catch(() => {});
+    if (accessToken) authApi.logout(accessToken).catch(() => {});
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setUser(null);
-    authApi.logout(localStorage.getItem('refresh_token') || '').catch(() => {});
   }, []);
 
   const checkAuth = useCallback(async () => {
@@ -52,6 +55,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authApi.getMe();
       setUser(response.data);
     } catch {
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken) {
+        try {
+          const { data } = await authApi.refresh(refreshToken);
+          localStorage.setItem('access_token', data.access_token);
+          const response = await authApi.getMe();
+          setUser(response.data);
+          setIsLoading(false);
+          return;
+        } catch {
+          // fall through to clear session
+        }
+      }
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       setUser(null);

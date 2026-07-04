@@ -6,15 +6,18 @@ import { BrowserRouter } from 'react-router-dom';
 import theme from './theme';
 import App from './App';
 import { AuthProvider } from './store/authStore';
+import { ToastProvider } from './store/toastStore';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ToastProvider>
       </BrowserRouter>
     </ThemeProvider>
   </StrictMode>
