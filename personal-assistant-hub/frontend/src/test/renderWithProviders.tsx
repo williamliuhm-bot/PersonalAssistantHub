@@ -4,8 +4,15 @@ import { ThemeProvider, createTheme } from '@mui/material';
 import type { ReactElement, ReactNode } from 'react';
 import { vi } from 'vitest';
 import { ToastProvider } from '../store/toastStore';
+import { DEFAULT_SETTINGS } from '../types/settings';
 
 const theme = createTheme();
+
+const defaultSettingsMock = {
+  settings: DEFAULT_SETTINGS,
+  updateSettings: vi.fn(),
+  resetSettings: vi.fn(),
+};
 
 interface Options extends Omit<RenderOptions, 'wrapper'> {
   route?: string;
@@ -22,6 +29,10 @@ export function renderWithProviders(ui: ReactElement, { route = '/', ...options 
     );
   }
   return render(ui, { wrapper: Wrapper, ...options });
+}
+
+export function createSettingsMock(overrides: Record<string, unknown> = {}) {
+  return { ...defaultSettingsMock, ...overrides };
 }
 
 export function createAuthMock(overrides: Record<string, unknown> = {}) {

@@ -1,0 +1,80 @@
+# Production overrides: docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml up -d --build
+
+x-db-env: &db-env
+  DATABASE_URL: postgresql+asyncpg://app:${POSTGRES_PASSWORD}@postgres:5432/personal_assistant_hub
+
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    ports: !reset []
+
+  redis:
+    ports: !reset []
+
+  api-gateway:
+    ports: !reset []
+
+  auth-service:
+    ports: !reset []
+    environment:
+      <<: *db-env
+
+  finance-service:
+    ports: !reset []
+    environment:
+      <<: *db-env
+
+  tasks-service:
+    ports: !reset []
+    environment:
+      <<: *db-env
+
+  notification-service:
+    ports: !reset []
+    environment:
+      <<: *db-env
+
+  integration-service:
+    ports: !reset []
+    environment:
+      <<: *db-env
+
+  notification-celery-worker:
+    environment:
+      <<: *db-env
+
+  celery-worker:
+    environment:
+      <<: *db-env
+
+  celery-beat:
+    environment:
+      <<: *db-env
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prebuilt
+    ports: !reset []
+
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN}
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - api-gateway
+
+volumes:
+  caddy_data:
+  caddy_config:

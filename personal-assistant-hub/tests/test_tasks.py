@@ -111,6 +111,25 @@ async def test_habit_logging(client: AsyncClient):
     assert response.status_code in (200, 201)
     updated = await client.get(f"/api/habits/{habit_id}")
     assert updated.json()["streak"] >= 0
+    assert updated.json()["today_count"] == 1
+
+
+async def test_habit_multiple_logs_per_day(client: AsyncClient):
+    habit = await client.post("/api/habits", json={
+        "title": "Water",
+        "frequency": "daily",
+        "times_per_day": 3,
+    })
+    habit_id = habit.json()["id"]
+
+    for i in range(3):
+        response = await client.post(f"/api/habits/{habit_id}/log")
+        assert response.status_code in (200, 201)
+        updated = await client.get(f"/api/habits/{habit_id}")
+        assert updated.json()["today_count"] == i + 1
+
+    blocked = await client.post(f"/api/habits/{habit_id}/log")
+    assert blocked.status_code == 409
 
 
 async def test_list_tasks_with_filters(client: AsyncClient):

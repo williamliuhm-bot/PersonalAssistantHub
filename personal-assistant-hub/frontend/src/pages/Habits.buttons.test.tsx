@@ -7,7 +7,7 @@ import { renderWithProviders } from '../test/renderWithProviders';
 vi.mock('../api/tasks', () => ({
   tasksApi: {
     getHabits: vi.fn().mockResolvedValue({
-      data: [{ id: 1, title: 'Water', frequency: 'daily', color: '#2563EB', streak: 0, description: '' }],
+      data: [{ id: 1, title: 'Water', frequency: 'daily', times_per_day: 1, today_count: 0, color: '#2563EB', streak: 0, description: '', created_at: '2026-01-01' }],
     }),
     getHabitCalendar: vi.fn().mockResolvedValue({
       data: { habit_id: 1, year: 2026, month: 7, days: [{ date: '2026-07-03', completed: true }] },

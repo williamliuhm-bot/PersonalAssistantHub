@@ -18,6 +18,15 @@ export function toRub(amount: number, currency?: string): number {
   return Math.round(Number(amount) * rate * 100) / 100;
 }
 
+export function convertCurrency(amount: number, fromCurrency?: string, toCurrency?: string): number {
+  const from = (fromCurrency || 'RUB').toUpperCase();
+  const to = (toCurrency || 'RUB').toUpperCase();
+  if (from === to) return Math.round(Number(amount) * 100) / 100;
+  const inRub = toRub(amount, from);
+  const toRate = RATES_TO_RUB[to] ?? 1;
+  return Math.round((inRub / toRate) * 100) / 100;
+}
+
 export function currencySymbol(currency?: string): string {
   if (!currency) return '₽';
   return CURRENCY_SYMBOLS[currency.toUpperCase()] || currency.toUpperCase();

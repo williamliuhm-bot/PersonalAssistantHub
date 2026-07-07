@@ -30,6 +30,7 @@ import {
   type CorrelationData,
 } from '../api/analytics';
 import { formatMoney } from '../utils/currency';
+import { useSettings } from '../store/settingsStore';
 import {
   buildExpenseBreakdownForRange,
   buildDailyFlowRub,
@@ -59,6 +60,8 @@ function TabPanel({ value, index, children }: { value: number; index: number; ch
 }
 
 export default function Analytics() {
+  const { settings } = useSettings();
+  const displayCurrency = settings.primaryCurrency;
   const [tabValue, setTabValue] = useState(0);
   const defaultRange = getDefaultReportRange();
   const [dateFrom, setDateFrom] = useState(defaultRange.from);
@@ -92,8 +95,8 @@ export default function Analytics() {
       ]);
 
       const tx = txResp.data;
-      setPieData(buildExpenseBreakdownForRange(tx, from, to, getCurrency));
-      setBarData(buildDailyFlowRub(tx, from, to, getCurrency));
+      setPieData(buildExpenseBreakdownForRange(tx, from, to, getCurrency, displayCurrency));
+      setBarData(buildDailyFlowRub(tx, from, to, getCurrency, displayCurrency));
 
       const series = balanceResp.data as BalanceHistorySeries[];
       if (series.length > 0) {
@@ -122,7 +125,7 @@ export default function Analytics() {
     } finally {
       setFinanceLoading(false);
     }
-  }, [getCurrency]);
+  }, [getCurrency, displayCurrency]);
 
   useEffect(() => {
     Promise.allSettled([
@@ -151,7 +154,7 @@ export default function Analytics() {
     if (!loading) {
       loadFinanceCharts(appliedFrom, appliedTo);
     }
-  }, [loading, appliedFrom, appliedTo, loadFinanceCharts]);
+  }, [loading, appliedFrom, appliedTo, loadFinanceCharts, displayCurrency]);
 
   const applyDateRange = () => {
     if (dateFrom > dateTo) {
@@ -292,7 +295,7 @@ export default function Analytics() {
                         </Pie>
                         <Tooltip
                           contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }}
-                          formatter={(value: number) => formatMoney(value, 'RUB')}
+                          formatter={(value: number) => formatMoney(value, displayCurrency)}
                         />
                         <Legend />
                       </PieChart>
@@ -325,7 +328,7 @@ export default function Analytics() {
                         <YAxis stroke="#94A3B8" fontSize={12} />
                         <Tooltip
                           contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }}
-                          formatter={(value: number) => formatMoney(value, 'RUB')}
+                          formatter={(value: number) => formatMoney(value, displayCurrency)}
                           labelFormatter={(_, payload) => {
                             const item = payload?.[0]?.payload as { date?: string } | undefined;
                             return item?.date ? formatSingleDateRu(item.date) : '';

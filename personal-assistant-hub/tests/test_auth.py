@@ -7,6 +7,7 @@ import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
+from sqlalchemy import select
 
 # Remove any existing 'app' from modules and path, add only auth-service
 for mod in list(sys.modules.keys()):
@@ -20,6 +21,7 @@ pytestmark = pytest.mark.asyncio
 
 from app.database import Base, get_db
 from app.main import app, get_redis
+from app.models import User
 
 test_engine = create_async_engine(
     "sqlite+aiosqlite://",
@@ -128,3 +130,66 @@ async def test_protected_endpoint_valid_token(client: AsyncClient):
 async def test_protected_endpoint_invalid_token(client: AsyncClient):
     response = await client.get("/auth/me", headers={"Authorization": "Bearer invalid"})
     assert response.status_code == 401
+
+
+async def promote_to_admin(email: str) -> None:
+    async with TestSessionLocal() as session:
+        result = await session.execute(select(User).where(User.email == email))
+        user = result.scalar_one()
+        user.role = "admin"
+        await session.commit()
+
+
+async def test_list_users_requires_admin(client: AsyncClient):
+    await client.post("/auth/register", json={
+        "email": "user1@example.com", "username": "user1", "password": "pass123",
+    })
+    await client.post("/auth/register", json={
+        "email": "admin@example.com", "username": "adminuser", "password": "pass123",
+    })
+    await promote_to_admin("admin@example.com")
+
+    user_login = await client.post("/auth/login", json={
+        "email": "user1@example.com", "password": "pass123",
+    })
+    user_token = user_login.json()["access_token"]
+    forbidden = await client.get("/auth/users", headers={"Authorization": f"Bearer {user_token}"})
+    assert forbidden.status_code == 403
+
+    admin_login = await client.post("/auth/login", json={
+        "email": "admin@example.com", "password": "pass123",
+    })
+    admin_token = admin_login.json()["access_token"]
+    response = await client.get("/auth/users", headers={"Authorization": f"Bearer {admin_token}"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] >= 2
+    assert all("subscription_status" in item for item in data["items"])
+
+
+async def test_admin_update_user_status(client: AsyncClient):
+    await client.post("/auth/register", json={
+        "email": "target@example.com", "username": "targetuser", "password": "pass123",
+    })
+    await client.post("/auth/register", json={
+        "email": "admin2@example.com", "username": "admin2", "password": "pass123",
+    })
+    await promote_to_admin("admin2@example.com")
+
+    admin_login = await client.post("/auth/login", json={
+        "email": "admin2@example.com", "password": "pass123",
+    })
+    admin_token = admin_login.json()["access_token"]
+
+    users = await client.get("/auth/users", headers={"Authorization": f"Bearer {admin_token}"})
+    target = next(u for u in users.json()["items"] if u["email"] == "target@example.com")
+
+    updated = await client.patch(
+        f"/auth/users/{target['id']}",
+        json={"subscription_status": "trial", "is_active": False},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert updated.status_code == 200
+    body = updated.json()
+    assert body["subscription_status"] == "trial"
+    assert body["is_active"] is False

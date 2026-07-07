@@ -5,6 +5,7 @@ import jwt
 
 from app.database import engine
 from app.models import Base
+from app.migrations import run_migrations
 from app.routes import projects, tasks, habits
 
 app = FastAPI(title="Tasks Service", version="1.0.0")
@@ -22,6 +23,7 @@ app.add_middleware(
 async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await run_migrations(conn)
 
 
 @app.exception_handler(jwt.ExpiredSignatureError)

@@ -34,20 +34,10 @@ import HabitMonthCalendar from '../components/HabitMonthCalendar';
 
 const HABIT_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
-const FREQUENCY_LABELS: Record<string, string> = {
-  daily: 'Ежедневно',
-  weekly: 'Еженедельно',
-  monthly: 'Ежемесячно',
-};
-
 function normalizeFrequency(frequency?: string): Habit['frequency'] {
   const value = (frequency || 'daily').toLowerCase();
   if (value === 'weekly' || value === 'monthly') return value;
   return 'daily';
-}
-
-function getFrequencyLabel(frequency?: string): string {
-  return FREQUENCY_LABELS[normalizeFrequency(frequency)] || FREQUENCY_LABELS.daily;
 }
 
 function getProgress(frequency: string, streak: number): number {
@@ -57,8 +47,23 @@ function getProgress(frequency: string, streak: number): number {
   return Math.min(streak / 30, 1);
 }
 
-function isHabitCompletedToday(habit: Habit, todayStr: string): boolean {
-  return habit.last_completed?.slice(0, 10) === todayStr;
+function getTimesPerDayLabel(timesPerDay: number): string {
+  if (timesPerDay === 1) return '1 раз в день';
+  return `${timesPerDay} раза в день`;
+}
+
+function isHabitCompletedToday(habit: Habit): boolean {
+  const target = habit.times_per_day || 1;
+  const done = habit.today_count ?? 0;
+  return done >= target;
+}
+
+function getCompleteButtonLabel(habit: Habit): string {
+  const target = habit.times_per_day || 1;
+  const done = habit.today_count ?? 0;
+  if (done >= target) return 'Выполнено';
+  if (target === 1) return 'Отметить';
+  return `Отметить (${done}/${target})`;
 }
 
 function TabPanel({ value, index, children }: { value: number; index: number; children: ReactNode }) {
@@ -75,6 +80,7 @@ export default function Habits() {
     title: '',
     description: '',
     frequency: 'daily' as Habit['frequency'],
+    times_per_day: 1,
     color: HABIT_COLORS[0],
   });
   const [editDialog, setEditDialog] = useState(false);
@@ -83,8 +89,6 @@ export default function Habits() {
   const [calendarMonth, setCalendarMonth] = useState(dayjs());
   const [calendarDates, setCalendarDates] = useState<Set<string>>(new Set());
   const [calendarLoading, setCalendarLoading] = useState(false);
-
-  const todayStr = new Date().toISOString().slice(0, 10);
 
   const fetchHabits = () => {
     setLoading(true);
@@ -135,13 +139,18 @@ export default function Habits() {
     try {
       await tasksApi.createHabit(newHabit);
       setAddDialog(false);
-      setNewHabit({ title: '', description: '', frequency: 'daily', color: HABIT_COLORS[0] });
+      setNewHabit({ title: '', description: '', frequency: 'daily', times_per_day: 1, color: HABIT_COLORS[0] });
       fetchHabits();
     } catch {}
   };
 
   const handleEditClick = (habit: Habit) => {
-    setEditHabit({ ...habit, frequency: normalizeFrequency(habit.frequency) });
+    setEditHabit({
+      ...habit,
+      frequency: normalizeFrequency(habit.frequency),
+      times_per_day: habit.times_per_day || 1,
+      today_count: habit.today_count ?? 0,
+    });
     setEditDialog(true);
   };
 
@@ -152,6 +161,7 @@ export default function Habits() {
         title: editHabit.title,
         description: editHabit.description,
         frequency: editHabit.frequency,
+        times_per_day: editHabit.times_per_day,
         color: editHabit.color,
       });
       setEditDialog(false);
@@ -209,8 +219,9 @@ export default function Habits() {
           >
             {habits.map((habit, idx) => {
               const color = habit.color || HABIT_COLORS[idx % HABIT_COLORS.length];
-              const isCompletedToday = isHabitCompletedToday(habit, todayStr);
+              const isCompletedToday = isHabitCompletedToday(habit);
               const progress = getProgress(habit.frequency, habit.streak);
+              const timesPerDay = habit.times_per_day || 1;
 
               return (
                 <Card
@@ -294,7 +305,7 @@ export default function Habits() {
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.35em', flexShrink: 0 }}>
                         <Chip
-                          label={getFrequencyLabel(habit.frequency)}
+                          label={getTimesPerDayLabel(timesPerDay)}
                           size="small"
                           variant="outlined"
                           sx={{
@@ -358,7 +369,7 @@ export default function Habits() {
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {isCompletedToday ? 'Выполнено' : 'Отметить'}
+                        {getCompleteButtonLabel(habit)}
                       </Button>
                     </Box>
                   </CardContent>
@@ -413,6 +424,18 @@ export default function Habits() {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField label="Название" fullWidth value={newHabit.title} onChange={(e) => setNewHabit({ ...newHabit, title: e.target.value })} />
             <TextField label="Описание" fullWidth multiline rows={2} value={newHabit.description} onChange={(e) => setNewHabit({ ...newHabit, description: e.target.value })} />
+            <TextField
+              label="Раз в день"
+              type="number"
+              fullWidth
+              inputProps={{ min: 1, max: 20 }}
+              value={newHabit.times_per_day}
+              onChange={(e) => setNewHabit({
+                ...newHabit,
+                times_per_day: Math.min(20, Math.max(1, Number(e.target.value) || 1)),
+              })}
+              helperText="Сколько раз нужно выполнить привычку за день"
+            />
             <FormControl fullWidth>
               <InputLabel>Частота</InputLabel>
               <Select value={newHabit.frequency} label="Частота" onChange={(e) => setNewHabit({ ...newHabit, frequency: e.target.value as Habit['frequency'] })}>
@@ -454,6 +477,17 @@ export default function Habits() {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField label="Название" fullWidth value={editHabit?.title || ''} onChange={(e) => setEditHabit(editHabit ? { ...editHabit, title: e.target.value } : null)} />
             <TextField label="Описание" fullWidth multiline rows={2} value={editHabit?.description || ''} onChange={(e) => setEditHabit(editHabit ? { ...editHabit, description: e.target.value } : null)} />
+            <TextField
+              label="Раз в день"
+              type="number"
+              fullWidth
+              inputProps={{ min: 1, max: 20 }}
+              value={editHabit?.times_per_day ?? 1}
+              onChange={(e) => setEditHabit(editHabit ? {
+                ...editHabit,
+                times_per_day: Math.min(20, Math.max(1, Number(e.target.value) || 1)),
+              } : null)}
+            />
             <FormControl fullWidth>
               <InputLabel>Частота</InputLabel>
               <Select

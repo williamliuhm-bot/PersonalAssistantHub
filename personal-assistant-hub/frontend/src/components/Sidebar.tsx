@@ -22,8 +22,12 @@ import {
   Notifications,
   Settings,
   ChevronLeft,
+  AdminPanelSettings,
 } from '@mui/icons-material';
 import { useAuth } from '../store/authStore';
+import { isAdmin } from '../api/auth';
+import { useTranslation } from '../i18n/useTranslation';
+import type { TranslationKey } from '../i18n/translations';
 
 const DRAWER_WIDTH = 260;
 
@@ -32,14 +36,14 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const navItems = [
-  { label: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
-  { label: 'Финансы', icon: <AccountBalance />, path: '/finance' },
-  { label: 'Отчеты', icon: <BarChart />, path: '/analytics' },
-  { label: 'Задачи', icon: <Assignment />, path: '/tasks' },
-  { label: 'Календарь', icon: <CalendarToday />, path: '/calendar' },
-  { label: 'Привычки', icon: <Whatshot />, path: '/habits' },
-  { label: 'Уведомления', icon: <Notifications />, path: '/notifications' },
+const navItems: { labelKey: TranslationKey; icon: React.ReactNode; path: string }[] = [
+  { labelKey: 'nav.dashboard', icon: <Dashboard />, path: '/dashboard' },
+  { labelKey: 'nav.finance', icon: <AccountBalance />, path: '/finance' },
+  { labelKey: 'nav.analytics', icon: <BarChart />, path: '/analytics' },
+  { labelKey: 'nav.tasks', icon: <Assignment />, path: '/tasks' },
+  { labelKey: 'nav.calendar', icon: <CalendarToday />, path: '/calendar' },
+  { labelKey: 'nav.habits', icon: <Whatshot />, path: '/habits' },
+  { labelKey: 'nav.notifications', icon: <Notifications />, path: '/notifications' },
 ];
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
@@ -47,7 +51,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const { t } = useTranslation();
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -113,7 +118,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 {item.icon}
               </ListItemIcon>
               <ListItemText
-                primary={item.label}
+                primary={t(item.labelKey)}
                 primaryTypographyProps={{
                   fontSize: 14,
                   fontWeight: isActive ? 600 : 400,
@@ -127,6 +132,25 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       <Divider sx={{ mx: 2 }} />
 
       <List sx={{ px: 1, py: 1 }}>
+        {isAdmin(user) && (
+          <ListItemButton
+            onClick={() => handleNavigate('/admin/users')}
+            sx={{
+              borderRadius: 2,
+              mb: 0.5,
+              color: location.pathname === '/admin/users' ? 'primary.main' : 'text.secondary',
+              bgcolor: location.pathname === '/admin/users' ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+              '&:hover': {
+                bgcolor: location.pathname === '/admin/users' ? 'rgba(37, 99, 235, 0.15)' : 'rgba(148, 163, 184, 0.08)',
+              },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
+              <AdminPanelSettings />
+            </ListItemIcon>
+            <ListItemText primary={t('nav.admin')} primaryTypographyProps={{ fontSize: 14 }} />
+          </ListItemButton>
+        )}
         <ListItemButton
           onClick={() => handleNavigate('/settings')}
           sx={{
@@ -139,13 +163,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
             <Settings />
           </ListItemIcon>
-          <ListItemText primary="Настройки" primaryTypographyProps={{ fontSize: 14 }} />
+          <ListItemText primary={t('nav.settings')} primaryTypographyProps={{ fontSize: 14 }} />
         </ListItemButton>
         <ListItemButton
           onClick={logout}
           sx={{ borderRadius: 2, color: 'error.main', '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.08)' } }}
         >
-          <ListItemText primary="Выйти" primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }} sx={{ textAlign: 'center' }} />
+          <ListItemText primary={t('nav.logout')} primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }} sx={{ textAlign: 'center' }} />
         </ListItemButton>
       </List>
     </Box>

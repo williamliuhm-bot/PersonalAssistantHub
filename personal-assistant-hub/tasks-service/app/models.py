@@ -42,6 +42,7 @@ class Habit(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, default="")
     frequency = Column(Enum("DAILY", "WEEKLY", "MONTHLY", name="habitfrequency"), default="DAILY")
+    times_per_day = Column(Integer, default=1, nullable=False)
     streak = Column(Integer, default=0)
     last_completed = Column(DateTime(timezone=True), nullable=True)
     color = Column(String(7), default="#6366f1")

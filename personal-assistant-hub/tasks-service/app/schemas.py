@@ -81,6 +81,7 @@ class HabitCreate(BaseModel):
     title: str
     description: Optional[str] = ""
     frequency: Optional[str] = "daily"
+    times_per_day: Optional[int] = Field(1, ge=1, le=20)
     color: Optional[str] = "#6366f1"
 
 
@@ -88,6 +89,7 @@ class HabitUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     frequency: Optional[str] = None
+    times_per_day: Optional[int] = Field(None, ge=1, le=20)
     color: Optional[str] = None
 
 
@@ -97,6 +99,8 @@ class HabitResponse(BaseModel):
     title: str
     description: Optional[str] = ""
     frequency: Optional[str] = "daily"
+    times_per_day: int = 1
+    today_count: int = 0
     streak: Optional[int] = 0
     last_completed: Optional[datetime.datetime] = None
     color: Optional[str] = "#6366f1"
@@ -125,3 +129,5 @@ class HabitLogResponse(BaseModel):
 class CalendarDay(BaseModel):
     date: str
     completed: bool
+    count: int = 0
+    target: int = 1

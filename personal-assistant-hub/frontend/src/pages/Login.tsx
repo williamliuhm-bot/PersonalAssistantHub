@@ -15,6 +15,8 @@ import {
 import { Visibility, VisibilityOff, Email, Lock, Person } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useAuth } from '../store/authStore';
+import { useSettings } from '../store/settingsStore';
+import { getStartScreenPath } from '../types/settings';
 
 export default function Login() {
   const [tabIndex, setTabIndex] = useState(0);
@@ -26,10 +28,11 @@ export default function Login() {
   const [password2, setPassword2] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, register, isAuthenticated } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
 
   if (isAuthenticated) {
-    navigate('/dashboard', { replace: true });
+    navigate(getStartScreenPath(settings.startScreen), { replace: true });
     return null;
   }
 
@@ -42,7 +45,7 @@ export default function Login() {
     setError('');
     try {
       await login({ email: username, password });
-      navigate('/dashboard', { replace: true });
+      navigate(getStartScreenPath(settings.startScreen), { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ошибка входа');
     }
@@ -66,7 +69,7 @@ export default function Login() {
     setError('');
     try {
       await register({ username, email, password, password2 });
-      navigate('/dashboard', { replace: true });
+      navigate(getStartScreenPath(settings.startScreen), { replace: true });
     } catch (err: any) {
       const detail = err.response?.data;
       if (typeof detail === 'object') {

@@ -24,6 +24,7 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-p
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 import { tasksApi, type Task } from '../api/tasks';
+import { useSettings } from '../store/settingsStore';
 
 const COLUMNS = [
   { id: 'todo', title: 'TODO', color: '#F59E0B' },
@@ -51,6 +52,7 @@ const columnVariants = {
 };
 
 export default function Tasks() {
+  const { settings } = useSettings();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,6 +128,10 @@ export default function Tasks() {
     } catch {}
   };
 
+  const visibleColumns = settings.completedTasksBehavior === 'hide'
+    ? COLUMNS.filter((c) => c.id !== 'done')
+    : COLUMNS;
+
   const getColumnTasks = (status: string) =>
     tasks.filter((t) => t.status === status);
 
@@ -177,7 +183,7 @@ export default function Tasks() {
             minHeight: '60vh',
           }}
         >
-          {COLUMNS.map((col) => (
+          {visibleColumns.map((col) => (
             <motion.div key={col.id} variants={columnVariants} initial="hidden" animate="visible">
               <Card
                 sx={{

@@ -1,5 +1,5 @@
 import type { Transaction } from '../api/finance';
-import { toRub } from './currency';
+import { convertCurrency } from './currency';
 
 export type StatsPeriod = 'month' | 'prev_month' | 'quarter';
 
@@ -117,6 +117,7 @@ export function buildMonthlyFlowRub(
   transactions: Transaction[],
   period: StatsPeriod,
   getCurrency: (tx: Transaction) => string,
+  targetCurrency = 'RUB',
 ): { month: string; Доходы: number; Расходы: number }[] {
   const yearMonths = getStatsYearMonths(period).sort();
   const totals: Record<string, { income: number; expense: number }> = {};
@@ -129,7 +130,7 @@ export function buildMonthlyFlowRub(
     if (!date) return;
     const ym = date.slice(0, 7);
     if (!totals[ym]) return;
-    const amount = toRub(Number(tx.amount), tx.account_currency || getCurrency(tx));
+    const amount = convertCurrency(Number(tx.amount), tx.account_currency || getCurrency(tx), targetCurrency);
     const type = String(tx.transaction_type || '').toLowerCase();
     if (type === 'income') totals[ym].income += amount;
     else if (type === 'expense') totals[ym].expense += amount;
@@ -146,9 +147,10 @@ export function buildExpenseBreakdownRub(
   transactions: Transaction[],
   period: StatsPeriod,
   getCurrency: (tx: Transaction) => string,
+  targetCurrency = 'RUB',
 ): { name: string; value: number }[] {
   const { from, to } = getStatsDateRange(period);
-  return buildExpenseBreakdownForRange(transactions, from, to, getCurrency);
+  return buildExpenseBreakdownForRange(transactions, from, to, getCurrency, targetCurrency);
 }
 
 export function buildExpenseBreakdownForRange(
@@ -156,6 +158,7 @@ export function buildExpenseBreakdownForRange(
   from: string,
   to: string,
   getCurrency: (tx: Transaction) => string,
+  targetCurrency = 'RUB',
 ): { name: string; value: number }[] {
   const totals: Record<string, number> = {};
 
@@ -165,7 +168,7 @@ export function buildExpenseBreakdownForRange(
     if (!date || date < from || date > to) return;
     const category = tx.category_name || 'Без категории';
     const currency = tx.account_currency || getCurrency(tx);
-    totals[category] = (totals[category] || 0) + toRub(Number(tx.amount), currency);
+    totals[category] = (totals[category] || 0) + convertCurrency(Number(tx.amount), currency, targetCurrency);
   });
 
   return Object.entries(totals)
@@ -178,6 +181,7 @@ export function buildDailyFlowRub(
   from: string,
   to: string,
   getCurrency: (tx: Transaction) => string,
+  targetCurrency = 'RUB',
 ): { date: string; label: string; Доходы: number; Расходы: number }[] {
   const byDate: Record<string, { income: number; expense: number }> = {};
 
@@ -185,7 +189,7 @@ export function buildDailyFlowRub(
     const date = tx.date?.slice(0, 10);
     if (!date || date < from || date > to) return;
     if (!byDate[date]) byDate[date] = { income: 0, expense: 0 };
-    const amount = toRub(Number(tx.amount), tx.account_currency || getCurrency(tx));
+    const amount = convertCurrency(Number(tx.amount), tx.account_currency || getCurrency(tx), targetCurrency);
     if (tx.transaction_type === 'income') byDate[date].income += amount;
     else byDate[date].expense += amount;
   });

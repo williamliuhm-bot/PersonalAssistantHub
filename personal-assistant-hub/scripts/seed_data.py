@@ -28,28 +28,28 @@ class Base(DeclarativeBase):
 
 
 class TimestampMixin:
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
 
 class AccountType(str, PyEnum):
-    CASH = "cash"
-    BANK = "bank"
-    CARD = "card"
-    SAVINGS = "savings"
+    CASH = "CASH"
+    BANK = "BANK"
+    CARD = "CARD"
+    SAVINGS = "SAVINGS"
 
 
 class CategoryType(str, PyEnum):
-    INCOME = "Income"
-    EXPENSE = "Expense"
+    INCOME = "INCOME"
+    EXPENSE = "EXPENSE"
 
 
 class TransactionType(str, PyEnum):
-    INCOME = "income"
-    EXPENSE = "expense"
-    TRANSFER = "transfer"
+    INCOME = "INCOME"
+    EXPENSE = "EXPENSE"
+    TRANSFER = "TRANSFER"
 
 
 class TaskStatus(str, PyEnum):
@@ -72,9 +72,9 @@ class HabitFrequency(str, PyEnum):
 
 
 class BudgetPeriod(str, PyEnum):
-    WEEKLY = "weekly"
-    MONTHLY = "monthly"
-    YEARLY = "yearly"
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"
+    YEARLY = "YEARLY"
 
 
 class User(Base, TimestampMixin):
@@ -170,7 +170,13 @@ class HabitLog(Base):
     completed_date = Column(Date, nullable=False)
 
 
-class ProductivityReport(Base, TimestampMixin):
+class RiskLevel(str, PyEnum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
+class ProductivityReport(Base):
     __tablename__ = "productivity_reports"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
@@ -180,17 +186,19 @@ class ProductivityReport(Base, TimestampMixin):
     entertainment_expenses = Column(DECIMAL(15, 2), default=Decimal("0.00"))
     correlation_score = Column(Float, nullable=True)
     insight = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 
-class BudgetForecast(Base, TimestampMixin):
+class BudgetForecast(Base):
     __tablename__ = "budget_forecasts"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     forecast_date = Column(Date, nullable=False)
     predicted_expenses = Column(DECIMAL(15, 2), default=Decimal("0.00"))
     budget_limit = Column(DECIMAL(15, 2), default=Decimal("0.00"))
-    risk_level = Column(String(20), default="low")
+    risk_level = Column(SAEnum(RiskLevel), default=RiskLevel.LOW)
     recommendation = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 
 FOOD_DESCRIPTIONS = [
@@ -510,14 +518,14 @@ async def main():
             forecast_date = today + timedelta(days=7 * day_offset + 1)
             predicted = Decimal(str(round(random.uniform(1500, 2500), 2)))
             limit = Decimal("2200.00")
-            risk = "low" if predicted < limit else "medium"
+            risk = RiskLevel.LOW if predicted < limit else RiskLevel.MEDIUM
             session.add(BudgetForecast(
                 user_id=user_id, forecast_date=forecast_date,
                 predicted_expenses=predicted, budget_limit=limit,
                 risk_level=risk,
                 recommendation=(
                     f"Прогноз расходов: {predicted} $, лимит бюджета: {limit} $. Риск: средний."
-                    if risk == "medium"
+                    if risk == RiskLevel.MEDIUM
                     else "Расходы укладываются в бюджет."
                 ),
             ))

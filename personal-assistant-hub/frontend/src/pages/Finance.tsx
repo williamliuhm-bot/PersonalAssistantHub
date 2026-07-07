@@ -38,7 +38,7 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { financeApi, type Account, type Category, type Transaction, type Budget, type FinanceReport, type BalanceHistorySeries } from '../api/finance';
-import { currencySymbol, formatMoney } from '../utils/currency';
+import { currencySymbol, formatMoney, convertCurrency } from '../utils/currency';
 import {
   buildExpenseBreakdownRub,
   buildMonthlyFlowRub,
@@ -51,6 +51,7 @@ import {
   type StatsPeriod,
 } from '../utils/financeStats';
 import { useToast } from '../store/toastStore';
+import { useSettings } from '../store/settingsStore';
 
 const apiErrorMessage = (err: unknown, fallback: string) => {
   const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
@@ -125,6 +126,8 @@ function TabPanel({ value, index, children }: { value: number; index: number; ch
 
 export default function Finance() {
   const { showError, showSuccess } = useToast();
+  const { settings } = useSettings();
+  const displayCurrency = settings.primaryCurrency;
   const [tabValue, setTabValue] = useState(0);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -180,13 +183,13 @@ export default function Finance() {
   );
 
   const pieData = useMemo(
-    () => buildExpenseBreakdownRub(transactions, statsPeriod, resolveTxCurrency),
-    [transactions, statsPeriod, resolveTxCurrency],
+    () => buildExpenseBreakdownRub(transactions, statsPeriod, resolveTxCurrency, displayCurrency),
+    [transactions, statsPeriod, resolveTxCurrency, displayCurrency],
   );
 
   const barData = useMemo(
-    () => buildMonthlyFlowRub(transactions, statsPeriod, resolveTxCurrency),
-    [transactions, statsPeriod, resolveTxCurrency],
+    () => buildMonthlyFlowRub(transactions, statsPeriod, resolveTxCurrency, displayCurrency),
+    [transactions, statsPeriod, resolveTxCurrency, displayCurrency],
   );
 
   const barChartHasValues = useMemo(
@@ -823,7 +826,7 @@ export default function Finance() {
                           Потрачено
                         </Typography>
                         <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                          {formatMoney(spent, 'RUB')}
+                          {formatMoney(convertCurrency(spent, 'RUB', displayCurrency), displayCurrency)}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -831,7 +834,7 @@ export default function Finance() {
                           Лимит{statsPeriod === 'quarter' ? ' (×3 мес.)' : ''}
                         </Typography>
                         <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                          {formatMoney(limit, 'RUB')}
+                          {formatMoney(convertCurrency(limit, 'RUB', displayCurrency), displayCurrency)}
                         </Typography>
                       </Box>
                       <LinearProgress
@@ -856,7 +859,7 @@ export default function Finance() {
                         </Typography>
                         {isOver && (
                           <Typography variant="caption" color="error.main" sx={{ fontWeight: 600 }}>
-                            Превышение на {formatMoney(spent - limit, 'RUB')}!
+                            Превышение на {formatMoney(convertCurrency(spent - limit, 'RUB', displayCurrency), displayCurrency)}!
                           </Typography>
                         )}
                       </Box>
@@ -883,7 +886,7 @@ export default function Finance() {
             <Card>
               <CardContent>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-                  Расходы по категориям (₽)
+                  Расходы по категориям ({currencySymbol(displayCurrency)})
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
                   {formatStatsPeriodRange(statsPeriod)}
@@ -898,7 +901,7 @@ export default function Finance() {
                       </Pie>
                       <Tooltip
                         contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }}
-                        formatter={(value: number) => formatMoney(value, 'RUB')}
+                        formatter={(value: number) => formatMoney(value, displayCurrency)}
                       />
                       <Legend />
                     </PieChart>
@@ -932,7 +935,7 @@ export default function Finance() {
                         <YAxis stroke="#94A3B8" fontSize={12} allowDecimals={false} />
                         <Tooltip
                           contentStyle={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 8 }}
-                          formatter={(value: number) => formatMoney(Number(value), 'RUB')}
+                          formatter={(value: number) => formatMoney(Number(value), displayCurrency)}
                         />
                         <Bar dataKey="Доходы" fill="#10B981" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="Расходы" fill="#EF4444" radius={[4, 4, 0, 0]} />

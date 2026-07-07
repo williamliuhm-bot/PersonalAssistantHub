@@ -27,6 +27,8 @@ export interface Habit {
   title: string;
   description?: string;
   frequency: 'daily' | 'weekly' | 'monthly';
+  times_per_day: number;
+  today_count: number;
   streak: number;
   color: string;
   icon?: string;
@@ -37,6 +39,8 @@ export interface Habit {
 export interface HabitCalendarDay {
   date: string;
   completed: boolean;
+  count?: number;
+  target?: number;
 }
 
 export interface HabitCalendar {

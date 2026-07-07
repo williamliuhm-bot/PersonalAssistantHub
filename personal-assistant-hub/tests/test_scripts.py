@@ -22,24 +22,24 @@ def test_random_amount_single_value_range():
 
 
 def test_seed_enums_account_type():
-    assert AccountType.CASH.value == "cash"
-    assert AccountType.BANK.value == "bank"
+    assert AccountType.CASH.value == "CASH"
+    assert AccountType.BANK.value == "BANK"
 
 
 def test_seed_enums_category_type():
-    assert CategoryType.INCOME.value == "Income"
-    assert CategoryType.EXPENSE.value == "Expense"
+    assert CategoryType.INCOME.value == "INCOME"
+    assert CategoryType.EXPENSE.value == "EXPENSE"
 
 
 def test_seed_enums_transaction_type():
-    assert TransactionType.INCOME.value == "income"
-    assert TransactionType.EXPENSE.value == "expense"
+    assert TransactionType.INCOME.value == "INCOME"
+    assert TransactionType.EXPENSE.value == "EXPENSE"
 
 
 def test_seed_enums_budget_period():
-    assert BudgetPeriod.MONTHLY.value == "monthly"
-    assert BudgetPeriod.WEEKLY.value == "weekly"
-    assert BudgetPeriod.YEARLY.value == "yearly"
+    assert BudgetPeriod.MONTHLY.value == "MONTHLY"
+    assert BudgetPeriod.WEEKLY.value == "WEEKLY"
+    assert BudgetPeriod.YEARLY.value == "YEARLY"
 
 
 def test_seed_script_has_main():

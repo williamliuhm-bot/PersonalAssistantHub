@@ -25,6 +25,7 @@ import { financeApi, type FinanceReport } from '../api/finance';
 import { tasksApi, type Task, type Habit } from '../api/tasks';
 import { analyticsApi } from '../api/analytics';
 import { currencySymbol, formatMoney } from '../utils/currency';
+import { useSettings } from '../store/settingsStore';
 import { buildExpenseBreakdownRub } from '../utils/financeStats';
 
 const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
@@ -142,8 +143,11 @@ function DashboardStatCard({
   );
 }
 
+import { buildExpenseBreakdownRub } from '../utils/financeStats';
+
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { settings } = useSettings();
   const [report, setReport] = useState<FinanceReport | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -171,6 +175,7 @@ export default function Dashboard() {
             item.account_currency ||
             accounts?.find((a) => a.id === item.account_id)?.currency ||
             'RUB',
+          settings.primaryCurrency,
         ));
       }
       setTasks(t.data || []);
@@ -180,7 +185,7 @@ export default function Dashboard() {
       }
       setLoading(false);
     });
-  }, []);
+  }, [settings.primaryCurrency]);
 
   if (loading) {
     return (
@@ -236,6 +241,7 @@ export default function Dashboard() {
               width: '100%',
             }}
           >
+          {settings.dashboardShowBalance ? (
           <DashboardStatCard onClick={() => navigate('/finance')}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5em', mb: '0.85em', flexWrap: 'nowrap' }}>
               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9em', lineHeight: 1.3 }}>
@@ -249,7 +255,7 @@ export default function Dashboard() {
                   <MoneyAmount key={b.currency} amount={b.amount} currency={b.currency} />
                 ))
               ) : (
-                <MoneyAmount amount={totalBalance} />
+                <MoneyAmount amount={totalBalance} currency={settings.primaryCurrency} />
               )}
             </Box>
             <Chip
@@ -259,13 +265,16 @@ export default function Dashboard() {
               sx={{ mt: 'auto', alignSelf: 'flex-start', fontSize: '0.75em', fontWeight: 500, maxWidth: '100%' }}
             />
           </DashboardStatCard>
+          ) : null}
 
+          {settings.dashboardShowBudgets ? (
+          <>
           <DashboardStatCard>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5em', mb: '0.85em', flexWrap: 'nowrap' }}>
               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9em' }}>Доходы</Typography>
               <StatCardIcon icon={TrendingUp} color="success.main" bgcolor="rgba(16, 185, 129, 0.12)" />
             </Box>
-            <MoneyAmount amount={monthlyIncome} currency={incomeCurrency} prefix="+" color="success.main" />
+            <MoneyAmount amount={monthlyIncome} currency={incomeCurrency || settings.primaryCurrency} prefix="+" color="success.main" />
             <Typography variant="caption" color="text.secondary" sx={{ mt: 'auto', pt: '0.75em', display: 'block', fontSize: '0.85em', lineHeight: 1.3 }}>
               За месяц
             </Typography>
@@ -276,11 +285,13 @@ export default function Dashboard() {
               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9em' }}>Расходы</Typography>
               <StatCardIcon icon={TrendingDown} color="error.main" bgcolor="rgba(239, 68, 68, 0.12)" />
             </Box>
-            <MoneyAmount amount={monthlyExpenses} currency={expenseCurrency} prefix="-" color="error.main" />
+            <MoneyAmount amount={monthlyExpenses} currency={expenseCurrency || settings.primaryCurrency} prefix="-" color="error.main" />
             <Typography variant="caption" color="text.secondary" sx={{ mt: 'auto', pt: '0.75em', display: 'block', fontSize: '0.85em', lineHeight: 1.3 }}>
               За месяц
             </Typography>
           </DashboardStatCard>
+          </>
+          ) : null}
 
           <DashboardStatCard>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5em', mb: '0.85em', flexWrap: 'nowrap' }}>
@@ -321,6 +332,7 @@ export default function Dashboard() {
           </DashboardStatCard>
         </Box>
 
+        {settings.dashboardShowTransactions ? (
         <motion.div variants={itemVariants} style={{ width: '100%', minWidth: 0 }}>
           <Card sx={{ ...statCardSx, minHeight: 'auto' }}>
             <CardContent sx={{ ...cardContentSx, height: '100%' }}>
@@ -354,7 +366,7 @@ export default function Dashboard() {
                         border: '1px solid rgba(148, 163, 184, 0.12)',
                         borderRadius: 8,
                       }}
-                      formatter={(value: number) => formatMoney(value, 'RUB')}
+                      formatter={(value: number) => formatMoney(value, settings.primaryCurrency)}
                     />
                     <Legend
                       verticalAlign="bottom"
@@ -372,6 +384,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </motion.div>
+        ) : null}
       </Box>
 
         {insightText && (
