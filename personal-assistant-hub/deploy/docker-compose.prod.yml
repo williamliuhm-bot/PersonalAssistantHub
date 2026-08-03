@@ -8,9 +8,11 @@ services:
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
     ports: !reset []
+    restart: always
 
   redis:
     ports: !reset []
+    restart: always
 
   api-gateway:
     ports: !reset []

@@ -5,7 +5,7 @@ export interface Project {
   name: string;
   color: string;
   description?: string;
-  created_at: string;
+  created_at?: string;
 }
 
 export interface Task {
@@ -14,7 +14,7 @@ export interface Task {
   description?: string;
   status: 'todo' | 'in_progress' | 'done';
   priority: 'low' | 'medium' | 'high' | 'critical';
-  project?: number;
+  project_id?: number | null;
   project_name?: string;
   project_color?: string;
   deadline?: string;
@@ -54,16 +54,36 @@ export const tasksApi = {
   getProjects: () =>
     client.get<Project[]>('/tasks/api/projects'),
 
-  createProject: (data: Partial<Project>) =>
+  createProject: (data: { name: string; description?: string; color?: string }) =>
     client.post<Project>('/tasks/api/projects', data),
+
+  updateProject: (id: number, data: { name?: string; description?: string; color?: string }) =>
+    client.patch<Project>(`/tasks/api/projects/${id}`, data),
+
+  deleteProject: (id: number) =>
+    client.delete(`/tasks/api/projects/${id}`),
 
   getTasks: (params?: { status?: string; priority?: string; project_id?: number; search?: string }) =>
     client.get<Task[]>('/tasks/api/tasks', { params }),
 
-  createTask: (data: Partial<Task>) =>
+  createTask: (data: {
+    title: string;
+    description?: string;
+    priority?: string;
+    status?: string;
+    project_id?: number | null;
+    deadline?: string;
+  }) =>
     client.post<Task>('/tasks/api/tasks', data),
 
-  updateTask: (id: number, data: Partial<Task>) =>
+  updateTask: (id: number, data: {
+    title?: string;
+    description?: string;
+    priority?: string;
+    status?: string;
+    project_id?: number | null;
+    deadline?: string;
+  }) =>
     client.patch<Task>(`/tasks/api/tasks/${id}`, data),
 
   deleteTask: (id: number) =>

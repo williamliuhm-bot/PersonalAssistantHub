@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="520" viewBox="0 0 920 520">
+  <defs>
+    <style>
+      .box { fill:#1C1F28; stroke:#3B82F6; stroke-width:1.5; rx:12; }
+      .box2 { fill:#1C1F28; stroke:#10B981; stroke-width:1.5; rx:12; }
+      .box3 { fill:#1C1F28; stroke:#F59E0B; stroke-width:1.5; rx:12; }
+      .t { fill:#F1F5F9; font-family:Segoe UI,Arial,sans-serif; font-size:13px; text-anchor:middle; }
+      .s { fill:#94A3B8; font-family:Segoe UI,Arial,sans-serif; font-size:11px; text-anchor:middle; }
+      .line { stroke:#64748B; stroke-width:1.5; fill:none; }
+    </style>
+  </defs>
+  <rect width="920" height="520" fill="#12141A"/>
+  <rect class="box" x="340" y="24" width="240" height="56"/>
+  <text class="t" x="460" y="48">Clients</text>
+  <text class="s" x="460" y="66">Electron � Web � Telegram Mini App</text>
+
+  <path class="line" d="M460 80 L460 110"/>
+
+  <rect class="box3" x="340" y="110" width="240" height="56"/>
+  <text class="t" x="460" y="134">API Gateway :8000</text>
+  <text class="s" x="460" y="152">JWT � CORS � rate limit � proxy</text>
+
+  <path class="line" d="M460 166 L460 190"/>
+  <path class="line" d="M120 190 L800 190"/>
+  <path class="line" d="M120 190 L120 210 M290 190 L290 210 M460 190 L460 210 M630 190 L630 210 M800 190 L800 210"/>
+
+  <rect class="box2" x="40" y="210" width="160" height="56"/><text class="t" x="120" y="234">Auth :8001</text><text class="s" x="120" y="252">JWT � users</text>
+  <rect class="box2" x="210" y="210" width="160" height="56"/><text class="t" x="290" y="234">Finance :8002</text><text class="s" x="290" y="252">accounts � txs</text>
+  <rect class="box2" x="380" y="210" width="160" height="56"/><text class="t" x="460" y="234">Tasks :8003</text><text class="s" x="460" y="252">kanban � habits</text>
+  <rect class="box2" x="550" y="210" width="160" height="56"/><text class="t" x="630" y="234">Notify :8004</text><text class="s" x="630" y="252">email � telegram</text>
+  <rect class="box2" x="720" y="210" width="160" height="56"/><text class="t" x="800" y="234">Integr. :8005</text><text class="s" x="800" y="252">analytics � events</text>
+
+  <path class="line" d="M120 266 L120 300 M290 266 L290 300 M460 266 L460 300 M630 266 L630 300 M800 266 L800 300"/>
+  <path class="line" d="M120 300 L800 300"/>
+  <path class="line" d="M460 300 L460 330"/>
+
+  <rect class="box" x="200" y="330" width="220" height="56"/><text class="t" x="310" y="354">PostgreSQL 16</text><text class="s" x="310" y="372">shared DB � per-service tables</text>
+  <rect class="box" x="500" y="330" width="220" height="56"/><text class="t" x="610" y="354">Redis 7</text><text class="s" x="610" y="372">cache � JWT blacklist � Celery</text>
+
+  <path class="line" d="M610 386 L610 420"/>
+  <rect class="box3" x="430" y="420" width="360" height="56"/>
+  <text class="t" x="610" y="444">Celery workers + beat</text>
+  <text class="s" x="610" y="462">notifications � productivity � budget forecast</text>
+</svg>

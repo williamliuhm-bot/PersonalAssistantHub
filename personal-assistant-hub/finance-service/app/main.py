@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
 from app.auth import get_current_user_id
-from app.routes import accounts, categories, transactions, budgets, reports
+from app.routes import accounts, categories, transactions, budgets, reports, internal
 
 app = FastAPI(title="Finance Service", version="1.0.0")
 
@@ -32,3 +32,4 @@ app.include_router(categories.router, prefix="/api", dependencies=[Depends(get_c
 app.include_router(transactions.router, prefix="/api", dependencies=[Depends(get_current_user_id)])
 app.include_router(budgets.router, prefix="/api", dependencies=[Depends(get_current_user_id)])
 app.include_router(reports.router, prefix="/api", dependencies=[Depends(get_current_user_id)])
+app.include_router(internal.router, prefix="/api")

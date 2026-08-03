@@ -23,8 +23,11 @@ import { Add, Search, DragIndicator } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
-import { tasksApi, type Task } from '../api/tasks';
+import { tasksApi, type Project, type Task } from '../api/tasks';
 import { useSettings } from '../store/settingsStore';
+import { useTranslation } from '../i18n/useTranslation';
+import PageHeader from '../components/PageHeader';
+import ProjectSwitcher from '../components/ProjectSwitcher';
 
 const COLUMNS = [
   { id: 'todo', title: 'TODO', color: '#F59E0B' },
@@ -52,28 +55,53 @@ const columnVariants = {
 };
 
 export default function Tasks() {
+  const { t } = useTranslation();
   const { settings } = useSettings();
+  const selectedProjectId = settings.selectedProjectId;
+
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
   const [addDialog, setAddDialog] = useState(false);
-  const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium' as Task['priority'], deadline: '' });
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    priority: 'medium' as Task['priority'],
+    deadline: '',
+    project_id: null as number | null,
+  });
   const [editDialog, setEditDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
 
+  const projectById = (id?: number | null) =>
+    id == null ? undefined : projects.find((p) => p.id === id);
+
   const fetchTasks = useCallback(() => {
     setLoading(true);
-    const params: Record<string, string> = {};
+    const params: { status?: string; priority?: string; project_id?: number; search?: string } = {};
     if (searchQuery) params.search = searchQuery;
     if (priorityFilter) params.priority = priorityFilter;
+    if (selectedProjectId !== 'all') params.project_id = selectedProjectId;
     tasksApi.getTasks(params).then((r) => {
       setTasks(r.data);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [searchQuery, priorityFilter]);
+  }, [searchQuery, priorityFilter, selectedProjectId]);
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
+
+  const openAddDialog = () => {
+    setNewTask({
+      title: '',
+      description: '',
+      priority: 'medium',
+      deadline: '',
+      project_id: selectedProjectId === 'all' ? null : selectedProjectId,
+    });
+    setAddDialog(true);
+  };
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -93,9 +121,10 @@ export default function Tasks() {
         description: newTask.description,
         priority: newTask.priority,
         deadline: newTask.deadline || undefined,
+        project_id: newTask.project_id,
       });
       setAddDialog(false);
-      setNewTask({ title: '', description: '', priority: 'medium', deadline: '' });
+      setNewTask({ title: '', description: '', priority: 'medium', deadline: '', project_id: null });
       fetchTasks();
     } catch {}
   };
@@ -114,6 +143,7 @@ export default function Tasks() {
         priority: editTask.priority,
         status: editTask.status,
         deadline: editTask.deadline || undefined,
+        project_id: editTask.project_id ?? null,
       });
       setEditDialog(false);
       setEditTask(null);
@@ -141,37 +171,44 @@ export default function Tasks() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>Задачи</Typography>
-        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
-          <TextField
-            size="small"
-            placeholder="Поиск задач..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{ minWidth: 220 }}
-            InputProps={{
-              startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment>,
-            }}
-          />
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Приоритет</InputLabel>
-            <Select
-              value={priorityFilter}
-              label="Приоритет"
-              onChange={(e) => setPriorityFilter(e.target.value)}
-            >
-              <MenuItem value="">Все</MenuItem>
-              <MenuItem value="critical">Критичный</MenuItem>
-              <MenuItem value="high">Высокий</MenuItem>
-              <MenuItem value="medium">Средний</MenuItem>
-              <MenuItem value="low">Низкий</MenuItem>
-            </Select>
-          </FormControl>
-          <Button variant="contained" startIcon={<Add />} onClick={() => setAddDialog(true)}>
-            Добавить
-          </Button>
-        </Box>
+      <PageHeader
+        title="Задачи"
+        subtitle="Канбан-доска"
+        actions={
+          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+            <TextField
+              size="small"
+              placeholder="Поиск задач..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ minWidth: 220 }}
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment>,
+              }}
+            />
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel>Приоритет</InputLabel>
+              <Select
+                value={priorityFilter}
+                label="Приоритет"
+                onChange={(e) => setPriorityFilter(e.target.value)}
+              >
+                <MenuItem value="">Все</MenuItem>
+                <MenuItem value="critical">Критичный</MenuItem>
+                <MenuItem value="high">Высокий</MenuItem>
+                <MenuItem value="medium">Средний</MenuItem>
+                <MenuItem value="low">Низкий</MenuItem>
+              </Select>
+            </FormControl>
+            <Button variant="contained" startIcon={<Add />} onClick={openAddDialog}>
+              Добавить
+            </Button>
+          </Box>
+        }
+      />
+
+      <Box sx={{ mb: 2 }}>
+        <ProjectSwitcher onProjectsChange={setProjects} />
       </Box>
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -214,64 +251,80 @@ export default function Tasks() {
                           p: 0.5,
                         }}
                       >
-                        {getColumnTasks(col.id).map((task, idx) => (
-                          <Draggable key={task.id} draggableId={task.id.toString()} index={idx}>
-                            {(provided, snapshot) => (
-                              <Card
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                onClick={() => handleEditClick(task)}
-                                sx={{
-                                  mb: 1,
-                                  bgcolor: 'background.paper',
-                                  border: '1px solid rgba(148, 163, 184, 0.1)',
-                                  opacity: snapshot.isDragging ? 0.85 : 1,
-                                  cursor: 'pointer',
-                                  '&:hover': { borderColor: 'rgba(148, 163, 184, 0.25)' },
-                                }}
-                              >
-                                <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                                  <Box {...provided.dragHandleProps} sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, mb: 0.5 }}>
-                                    <DragIndicator sx={{ fontSize: 16, color: 'text.secondary', mt: 0.3, cursor: 'grab' }} />
-                                    <Box sx={{ flex: 1 }}>
-                                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                        {task.title}
-                                      </Typography>
+                        {getColumnTasks(col.id).map((task, idx) => {
+                          const project = projectById(task.project_id);
+                          return (
+                            <Draggable key={task.id} draggableId={task.id.toString()} index={idx}>
+                              {(provided, snapshot) => (
+                                <Card
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  onClick={() => handleEditClick(task)}
+                                  sx={{
+                                    mb: 1,
+                                    bgcolor: 'background.paper',
+                                    border: '1px solid rgba(148, 163, 184, 0.1)',
+                                    opacity: snapshot.isDragging ? 0.85 : 1,
+                                    cursor: 'pointer',
+                                    '&:hover': { borderColor: 'rgba(148, 163, 184, 0.25)' },
+                                  }}
+                                >
+                                  <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                                    <Box {...provided.dragHandleProps} sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, mb: 0.5 }}>
+                                      <DragIndicator sx={{ fontSize: 16, color: 'text.secondary', mt: 0.3, cursor: 'grab' }} />
+                                      <Box sx={{ flex: 1 }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                          {task.title}
+                                        </Typography>
+                                      </Box>
+                                      <IconButton
+                                        size="small"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteTask(task.id);
+                                        }}
+                                        sx={{ p: 0.3 }}
+                                      >
+                                        <Typography variant="caption" color="error.main">✕</Typography>
+                                      </IconButton>
                                     </Box>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteTask(task.id);
-                                      }}
-                                      sx={{ p: 0.3 }}
-                                    >
-                                      <Typography variant="caption" color="error.main">✕</Typography>
-                                    </IconButton>
-                                  </Box>
-                                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', ml: 3 }}>
-                                    <Chip
-                                      label={PRIORITY_LABELS[task.priority] || task.priority}
-                                      size="small"
-                                      sx={{
-                                        height: 20,
-                                        fontSize: 10,
-                                        fontWeight: 600,
-                                        bgcolor: `${PRIORITY_COLORS[task.priority]}20`,
-                                        color: PRIORITY_COLORS[task.priority],
-                                      }}
-                                    />
-                                    {task.deadline && (
-                                      <Typography variant="caption" color="text.secondary">
-                                        {dayjs(task.deadline).format('DD.MM')}
-                                      </Typography>
-                                    )}
-                                  </Box>
-                                </CardContent>
-                              </Card>
-                            )}
-                          </Draggable>
-                        ))}
+                                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', ml: 3, flexWrap: 'wrap' }}>
+                                      <Chip
+                                        label={PRIORITY_LABELS[task.priority] || task.priority}
+                                        size="small"
+                                        sx={{
+                                          height: 20,
+                                          fontSize: 10,
+                                          fontWeight: 600,
+                                          bgcolor: `${PRIORITY_COLORS[task.priority]}20`,
+                                          color: PRIORITY_COLORS[task.priority],
+                                        }}
+                                      />
+                                      {selectedProjectId === 'all' && project && (
+                                        <Chip
+                                          label={project.name}
+                                          size="small"
+                                          sx={{
+                                            height: 20,
+                                            fontSize: 10,
+                                            fontWeight: 600,
+                                            bgcolor: `${project.color}20`,
+                                            color: project.color,
+                                          }}
+                                        />
+                                      )}
+                                      {task.deadline && (
+                                        <Typography variant="caption" color="text.secondary">
+                                          {dayjs(task.deadline).format('DD.MM')}
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                  </CardContent>
+                                </Card>
+                              )}
+                            </Draggable>
+                          );
+                        })}
                         {provided.placeholder}
                         {getColumnTasks(col.id).length === 0 && (
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', py: 4 }}>
@@ -306,6 +359,24 @@ export default function Tasks() {
               value={newTask.description}
               onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
             />
+            <FormControl fullWidth>
+              <InputLabel>{t('projects.label')}</InputLabel>
+              <Select
+                value={newTask.project_id ?? ''}
+                label={t('projects.label')}
+                onChange={(e) =>
+                  setNewTask({
+                    ...newTask,
+                    project_id: e.target.value === '' ? null : Number(e.target.value),
+                  })
+                }
+              >
+                <MenuItem value="">{t('projects.none')}</MenuItem>
+                {projects.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <FormControl fullWidth>
               <InputLabel>Приоритет</InputLabel>
               <Select
@@ -353,6 +424,28 @@ export default function Tasks() {
               value={editTask?.description || ''}
               onChange={(e) => setEditTask(editTask ? { ...editTask, description: e.target.value } : null)}
             />
+            <FormControl fullWidth>
+              <InputLabel>{t('projects.label')}</InputLabel>
+              <Select
+                value={editTask?.project_id ?? ''}
+                label={t('projects.label')}
+                onChange={(e) =>
+                  setEditTask(
+                    editTask
+                      ? {
+                          ...editTask,
+                          project_id: e.target.value === '' ? null : Number(e.target.value),
+                        }
+                      : null,
+                  )
+                }
+              >
+                <MenuItem value="">{t('projects.none')}</MenuItem>
+                {projects.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <FormControl fullWidth>
               <InputLabel>Приоритет</InputLabel>
               <Select

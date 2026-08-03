@@ -1,8 +1,10 @@
+import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, Depends, HTTPException, Request, status
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,13 +19,38 @@ from app.schemas import (
     MarkReadResponse,
 )
 from app.tasks import send_email_notification, send_telegram_notification, send_push_notification
+from app.routes_telegram import router as telegram_router
+from app.telegram_webapp import router as webapp_router
+from app import telegram_runtime as runtime
+
+logger = logging.getLogger(__name__)
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
+API_PUBLIC_URL = os.getenv("API_PUBLIC_URL", "").rstrip("/")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await runtime.register_webhook()
+    await runtime.setup_webapp_menu()
+
+    stop_event = asyncio.Event()
+    poll_task = None
+    if runtime.should_use_polling():
+        poll_task = asyncio.create_task(runtime.polling_loop(stop_event))
+
     yield
+
+    stop_event.set()
+    if poll_task is not None:
+        poll_task.cancel()
+        try:
+            await poll_task
+        except asyncio.CancelledError:
+            pass
     await engine.dispose()
 
 
@@ -36,6 +63,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(telegram_router, prefix="/api")
+app.include_router(webapp_router, prefix="/api")
 
 
 @app.get("/health")

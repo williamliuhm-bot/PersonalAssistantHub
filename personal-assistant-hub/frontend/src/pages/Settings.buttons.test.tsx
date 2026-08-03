@@ -67,6 +67,26 @@ vi.mock('../store/settingsStore', () => ({
 
 vi.mock('../store/toastStore', () => ({
   useToast: () => ({ showSuccess, showError, showInfo }),
+  ToastProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+vi.mock('../api/telegram', () => ({
+  telegramApi: {
+    getStatus: vi.fn().mockResolvedValue({
+      linked: false,
+      bot_username: null,
+      bot_url: null,
+    }),
+    createLinkToken: vi.fn(),
+    updateSettings: vi.fn(),
+    unlink: vi.fn(),
+  },
+}));
+
+vi.mock('../api/finance', () => ({
+  financeApi: {
+    getAccounts: vi.fn().mockResolvedValue({ data: [] }),
+  },
 }));
 
 describe('Settings page buttons', () => {
@@ -77,14 +97,16 @@ describe('Settings page buttons', () => {
     resetSettings.mockClear();
   });
 
-  it('renders logout button', () => {
+  it('renders logout button', async () => {
     renderWithProviders(<Settings />);
-    expect(screen.getByRole('button', { name: /settings\.logout/i })).toBeInTheDocument();
+    await userEvent.click(screen.getByText('settings.interface'));
+    expect(await screen.findByRole('button', { name: /settings\.logout/i })).toBeInTheDocument();
   });
 
   it('logout navigates to login', async () => {
     renderWithProviders(<Settings />);
-    await userEvent.click(screen.getByRole('button', { name: /settings\.logout/i }));
+    await userEvent.click(screen.getByText('settings.interface'));
+    await userEvent.click(await screen.findByRole('button', { name: /settings\.logout/i }));
     expect(authMock.logout).toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith('/login');
   });
@@ -98,10 +120,11 @@ describe('Settings page buttons', () => {
 
   it('shows settings sections', () => {
     renderWithProviders(<Settings />);
-    expect(screen.getByText('settings.finance')).toBeInTheDocument();
-    expect(screen.getByText('settings.tasks')).toBeInTheDocument();
-    expect(screen.getByText('settings.habits')).toBeInTheDocument();
-    expect(screen.getByText('settings.notifications')).toBeInTheDocument();
-    expect(screen.getByText('settings.interface')).toBeInTheDocument();
+    expect(screen.getAllByText('settings.finance').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('settings.tasks').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('settings.habits').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('settings.telegram').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('settings.notifications').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('settings.interface').length).toBeGreaterThan(0);
   });
 });

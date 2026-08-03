@@ -14,6 +14,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: always
 
   redis:
     image: redis:7-alpine
@@ -24,6 +25,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: always
 
   api-gateway:
     build:
@@ -76,6 +78,7 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-super-secret-key-2024}
       JWT_ALGORITHM: HS256
       INTEGRATION_SERVICE_URL: http://integration-service:8005
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change-me-internal-service-token}
       RATE_USD_RUB: ${RATE_USD_RUB:-90}
       RATE_EUR_RUB: ${RATE_EUR_RUB:-98}
       RATE_GBP_RUB: ${RATE_GBP_RUB:-115}
@@ -119,13 +122,26 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      TELEGRAM_DEFAULT_CHAT_ID: ${TELEGRAM_DEFAULT_CHAT_ID:-}
+      TELEGRAM_USE_POLLING: ${TELEGRAM_USE_POLLING:-true}
+      TELEGRAM_PROXY_URL: ${TELEGRAM_PROXY_URL:-}
+      TELEGRAM_WEBAPP_URL: ${TELEGRAM_WEBAPP_URL:-}
+      API_PUBLIC_URL: ${API_PUBLIC_URL:-http://localhost:8000}
+      FINANCE_SERVICE_URL: http://finance-service:8002
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change-me-internal-service-token}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-super-secret-key-2024}
       JWT_ALGORITHM: HS256
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      finance-service:
+        condition: service_started
     restart: always
 
   integration-service:
@@ -179,6 +195,9 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_DEFAULT_CHAT_ID: ${TELEGRAM_DEFAULT_CHAT_ID:-}
+      TELEGRAM_PROXY_URL: ${TELEGRAM_PROXY_URL:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy

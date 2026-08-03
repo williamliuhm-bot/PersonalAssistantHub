@@ -17,18 +17,24 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ru';
 import { financeApi, type Transaction } from '../api/finance';
 import { tasksApi, type Task, type Habit } from '../api/tasks';
+import { useSettings } from '../store/settingsStore';
+import PageHeader from '../components/PageHeader';
+import ProjectSwitcher from '../components/ProjectSwitcher';
 
 dayjs.locale('ru');
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 const TYPE_COLORS: Record<string, string> = {
-  task: '#2563EB',
+  task: '#111827',
   habit: '#F59E0B',
   payment: '#10B981',
 };
 
 export default function Calendar() {
+  const { settings } = useSettings();
+  const selectedProjectId = settings.selectedProjectId;
+
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -52,7 +58,9 @@ export default function Calendar() {
         date_from: monthStart.format('YYYY-MM-DD'),
         date_to: monthEnd.format('YYYY-MM-DD'),
       }),
-      tasksApi.getTasks(),
+      tasksApi.getTasks(
+        selectedProjectId === 'all' ? undefined : { project_id: selectedProjectId },
+      ),
       tasksApi.getHabits(),
     ])
       .then(async (results) => {
@@ -111,7 +119,7 @@ export default function Calendar() {
     return () => {
       cancelled = true;
     };
-  }, [monthYear, monthIndex]);
+  }, [monthYear, monthIndex, selectedProjectId]);
 
   const getDaysInMonth = () => {
     const daysInMonth = currentDate.daysInMonth();
@@ -153,16 +161,22 @@ export default function Calendar() {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>Календарь</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton onClick={() => navigateMonth(-1)} aria-label="Предыдущий месяц"><ChevronLeft /></IconButton>
-          <Typography variant="h6" sx={{ minWidth: 180, textAlign: 'center', fontWeight: 600, textTransform: 'capitalize' }}>
-            {currentDate.format('MMMM YYYY')}
-          </Typography>
-          <IconButton onClick={() => navigateMonth(1)} aria-label="Следующий месяц"><ChevronRight /></IconButton>
-          <IconButton onClick={goToday} aria-label="Сегодня"><Today /></IconButton>
-        </Box>
+      <PageHeader
+        title="Календарь"
+        actions={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton onClick={() => navigateMonth(-1)} aria-label="Предыдущий месяц"><ChevronLeft /></IconButton>
+            <Typography variant="h6" sx={{ minWidth: 180, textAlign: 'center', fontWeight: 600, textTransform: 'capitalize' }}>
+              {currentDate.format('MMMM YYYY')}
+            </Typography>
+            <IconButton onClick={() => navigateMonth(1)} aria-label="Следующий месяц"><ChevronRight /></IconButton>
+            <IconButton onClick={goToday} aria-label="Сегодня"><Today /></IconButton>
+          </Box>
+        }
+      />
+
+      <Box sx={{ mb: 2 }}>
+        <ProjectSwitcher />
       </Box>
 
       <Card>

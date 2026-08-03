@@ -71,19 +71,43 @@ def send_email_notification(user_id: str, title: str, message: str):
 def send_telegram_notification(user_id: str, title: str, message: str):
     async def _execute():
         token = os.getenv("TELEGRAM_BOT_TOKEN", "")
-        chat_id = os.getenv("TELEGRAM_DEFAULT_CHAT_ID", "")
-        if not token or not chat_id:
+        if not token:
             logger.warning(
-                "Telegram not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_DEFAULT_CHAT_ID). "
-                "Skipping notification for user %s: %s",
+                "TELEGRAM_BOT_TOKEN not configured. Skipping notification for user %s: %s",
                 user_id,
                 title,
             )
             return
 
-        from telegram import Bot
+        engine = _get_engine()
+        chat_id = None
+        try:
+            async with engine.connect() as conn:
+                result = await conn.execute(
+                    text(
+                        "SELECT chat_id FROM telegram_links WHERE user_id = :user_id LIMIT 1"
+                    ),
+                    {"user_id": str(user_id)},
+                )
+                row = result.fetchone()
+                if row is not None:
+                    chat_id = row[0]
+        finally:
+            await engine.dispose()
 
-        bot = Bot(token=token)
+        if chat_id is None:
+            fallback = os.getenv("TELEGRAM_DEFAULT_CHAT_ID", "")
+            if not fallback:
+                logger.warning(
+                    "No telegram_links row and no TELEGRAM_DEFAULT_CHAT_ID for user %s",
+                    user_id,
+                )
+                return
+            chat_id = fallback
+
+        from app.telegram_bot import create_bot
+
+        bot = create_bot(token)
         text_msg = f"*{title}*\n\n{message}"
         await bot.send_message(chat_id=chat_id, text=text_msg, parse_mode="Markdown")
         logger.info("Telegram message sent for user %s: %s", user_id, title)

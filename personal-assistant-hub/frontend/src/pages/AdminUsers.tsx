@@ -6,7 +6,6 @@ import {
   FormControl,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   Switch,
   Table,
@@ -24,6 +23,8 @@ import {
   type User,
 } from '../api/auth';
 import { useTranslation } from '../i18n/useTranslation';
+import PageHeader from '../components/PageHeader';
+import SoftCard from '../components/SoftCard';
 
 const SUBSCRIPTION_STATUSES: SubscriptionStatus[] = [
   'free',
@@ -91,12 +92,7 @@ export default function AdminUsers() {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-        {t('admin.title')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {t('admin.subtitle')}
-      </Typography>
+      <PageHeader title={t('admin.title')} subtitle={t('admin.subtitle')} />
 
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         <TextField
@@ -137,7 +133,8 @@ export default function AdminUsers() {
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper} variant="outlined">
+        <SoftCard padding={0} sx={{ overflow: 'hidden' }}>
+        <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -206,6 +203,7 @@ export default function AdminUsers() {
             </TableBody>
           </Table>
         </TableContainer>
+        </SoftCard>
       )}
     </Box>
   );

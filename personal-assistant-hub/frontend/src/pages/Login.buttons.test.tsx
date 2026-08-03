@@ -16,6 +16,19 @@ vi.mock('../store/authStore', () => ({
   useAuth: () => authMock,
 }));
 
+vi.mock('../store/settingsStore', () => ({
+  useSettings: () => ({
+    settings: {
+      theme: 'light',
+      language: 'ru',
+      startScreen: 'dashboard',
+      primaryCurrency: 'RUB',
+    },
+    updateSettings: vi.fn(),
+    resetSettings: vi.fn(),
+  }),
+}));
+
 describe('Login page buttons', () => {
   beforeEach(() => {
     navigate.mockClear();
@@ -44,7 +57,7 @@ describe('Login page buttons', () => {
 
   it('switches to register tab and shows Зарегистрироваться', async () => {
     renderWithProviders(<Login />);
-    await userEvent.click(screen.getByRole('tab', { name: /регистрац/i }));
+    await userEvent.click(screen.getByText('Регистрация'));
     expect(screen.getByRole('button', { name: 'Зарегистрироваться' })).toBeInTheDocument();
   });
 

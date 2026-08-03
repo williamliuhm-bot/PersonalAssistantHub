@@ -86,6 +86,10 @@ def _is_protected(path: str) -> bool:
         return False
     if path.startswith("/redoc"):
         return False
+    if path == "/notification/api/telegram/webhook":
+        return False
+    if path == "/notification/api/telegram/webapp/auth":
+        return False
     return True
 
 

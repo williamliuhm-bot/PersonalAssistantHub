@@ -1,0 +1,16 @@
+[Unit]
+Description=Personal Assistant Hub (Docker Compose)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/personal-assistant-hub
+ExecStart=/usr/bin/docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml up -d
+ExecStop=/usr/bin/docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml stop
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

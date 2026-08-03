@@ -153,6 +153,10 @@ class TransactionCreate(BaseModel):
         return _parse_transaction_type(v)
 
 
+class InternalTransactionCreate(TransactionCreate):
+    user_id: int
+
+
 class TransactionUpdate(BaseModel):
     account_id: Optional[int] = None
     category_id: Optional[int] = None

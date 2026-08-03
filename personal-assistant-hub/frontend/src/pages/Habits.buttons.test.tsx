@@ -15,6 +15,7 @@ vi.mock('../api/tasks', () => ({
     createHabit: vi.fn(),
     updateHabit: vi.fn(),
     completeHabit: vi.fn(),
+    deleteHabit: vi.fn(),
   },
 }));
 
@@ -41,6 +42,15 @@ describe('Habits page buttons', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Отметить' }));
     const { tasksApi } = await import('../api/tasks');
     expect(tasksApi.completeHabit).toHaveBeenCalledWith(1);
+  });
+
+  it('delete habit button calls API', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    renderWithProviders(<Habits />);
+    await waitFor(() => screen.getByText('Water'));
+    await userEvent.click(screen.getByRole('button', { name: 'Удалить привычку' }));
+    const { tasksApi } = await import('../api/tasks');
+    expect(tasksApi.deleteHabit).toHaveBeenCalledWith(1);
   });
 
   it('calendar tab loads habit calendar', async () => {

@@ -32,7 +32,7 @@ import {
   FormControlLabel,
   Divider,
 } from '@mui/material';
-import { Add, Edit, Delete, Search, AccountBalance, Category, Description, CalendarMonth, Savings, ExpandMore } from '@mui/icons-material';
+import { Add, Edit, Delete, Search, AccountBalance, Category as CategoryIcon, Description, CalendarMonth, Savings, ExpandMore } from '@mui/icons-material';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line,
 } from 'recharts';
@@ -52,6 +52,7 @@ import {
 } from '../utils/financeStats';
 import { useToast } from '../store/toastStore';
 import { useSettings } from '../store/settingsStore';
+import PageHeader from '../components/PageHeader';
 
 const apiErrorMessage = (err: unknown, fallback: string) => {
   const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
@@ -60,13 +61,13 @@ const apiErrorMessage = (err: unknown, fallback: string) => {
   return fallback;
 };
 
-const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
+const COLORS = ['#111827', '#10B981', '#F59E0B', '#EF4444', '#6366F1', '#EC4899', '#06B6D4', '#F97316'];
 
 const CURRENCY_LINE_COLORS: Record<string, string> = {
-  RUB: '#2563EB',
+  RUB: '#111827',
   USD: '#10B981',
   EUR: '#F59E0B',
-  GBP: '#8B5CF6',
+  GBP: '#6366F1',
 };
 
 const STATS_PERIOD_OPTIONS: { value: StatsPeriod; label: string }[] = [
@@ -461,7 +462,7 @@ export default function Finance() {
 
   return (
     <motion.div initial="hidden" animate="visible" variants={itemVariants}>
-      <Typography variant="h4" sx={{ mb: 2, fontWeight: 700 }}>Финансы</Typography>
+      <PageHeader title="Финансы" subtitle="Счета, транзакции и бюджеты" />
 
       <Box
         sx={{
@@ -597,7 +598,7 @@ export default function Finance() {
               <Button variant="contained" startIcon={<Add />} size="small" onClick={openTxDialog}>
                 Добавить
               </Button>
-              <Button variant="outlined" startIcon={<Category />} size="small" onClick={() => setCatDialog(true)}>
+              <Button variant="outlined" startIcon={<CategoryIcon />} size="small" onClick={() => setCatDialog(true)}>
                 Категории
               </Button>
             </Box>

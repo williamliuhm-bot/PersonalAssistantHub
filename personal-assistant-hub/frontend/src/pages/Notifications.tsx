@@ -23,6 +23,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ru';
 import { notificationsApi, type Notification } from '../api/notifications';
+import PageHeader from '../components/PageHeader';
 
 dayjs.extend(relativeTime);
 dayjs.locale('ru');
@@ -94,19 +95,19 @@ export default function NotificationsPage() {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>Уведомления</Typography>
-          {unreadCount > 0 && (
-            <Chip label={unreadCount} color="primary" size="small" sx={{ fontWeight: 600 }} />
-          )}
-        </Box>
-        {unreadCount > 0 && (
-          <Button startIcon={<DoneAll />} size="small" onClick={handleMarkAllRead}>
-            Прочитать все
-          </Button>
-        )}
-      </Box>
+      <PageHeader
+        title="Уведомления"
+        actions={
+          unreadCount > 0 ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Chip label={unreadCount} color="primary" size="small" sx={{ fontWeight: 600 }} />
+              <Button startIcon={<DoneAll />} size="small" onClick={handleMarkAllRead}>
+                Прочитать все
+              </Button>
+            </Box>
+          ) : undefined
+        }
+      />
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         {notifications.length === 0 ? (

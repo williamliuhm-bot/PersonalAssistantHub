@@ -27,10 +27,12 @@ import {
   CheckCircleOutline,
   RadioButtonUnchecked,
   EditOutlined,
+  DeleteOutlined,
 } from '@mui/icons-material';
 import dayjs from 'dayjs';
 import { tasksApi, type Habit } from '../api/tasks';
 import HabitMonthCalendar from '../components/HabitMonthCalendar';
+import PageHeader from '../components/PageHeader';
 
 const HABIT_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
@@ -170,6 +172,18 @@ export default function Habits() {
     } catch {}
   };
 
+  const handleDelete = async (habit: Habit) => {
+    if (!window.confirm(`Удалить привычку «${habit.title}»?`)) return;
+    try {
+      await tasksApi.deleteHabit(habit.id);
+      if (calendarHabitId === habit.id) {
+        const remaining = habits.filter((h) => h.id !== habit.id);
+        setCalendarHabitId(remaining[0]?.id ?? '');
+      }
+      fetchHabits();
+    } catch {}
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -180,23 +194,15 @@ export default function Habits() {
 
   return (
     <Box sx={{ width: '100%', maxWidth: '100%' }}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'stretch', sm: 'center' },
-          gap: 2,
-          mb: 2,
-        }}
-      >
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Привычки
-        </Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setAddDialog(true)} sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}>
-          Добавить
-        </Button>
-      </Box>
+      <PageHeader
+        title="Привычки"
+        subtitle="Отслеживайте ежедневный прогресс"
+        actions={
+          <Button variant="contained" startIcon={<Add />} onClick={() => setAddDialog(true)}>
+            Добавить
+          </Button>
+        }
+      />
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 1, borderBottom: 1, borderColor: 'divider' }}>
         <Tab label="Список" />
@@ -317,6 +323,9 @@ export default function Habits() {
                         />
                         <IconButton size="small" onClick={() => handleEditClick(habit)} aria-label="Редактировать" sx={{ p: '0.35em' }}>
                           <EditOutlined sx={{ fontSize: '1.15em' }} />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={() => handleDelete(habit)} aria-label="Удалить привычку" sx={{ p: '0.35em' }}>
+                          <DeleteOutlined sx={{ fontSize: '1.15em' }} />
                         </IconButton>
                       </Box>
                     </Box>

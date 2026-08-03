@@ -1,24 +1,14 @@
 import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { Box, IconButton, useMediaQuery, useTheme } from '@mui/material';
-import { Menu } from '@mui/icons-material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
+import TopBar from './TopBar';
 
 const pageVariants = {
-  initial: { opacity: 0, y: 8 },
+  initial: { opacity: 0, y: 10 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -8 },
-};
-
-const pageTitles: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/finance': 'Финансы',
-  '/tasks': 'Задачи',
-  '/calendar': 'Календарь',
-  '/habits': 'Привычки',
-  '/analytics': 'Отчеты',
-  '/notifications': 'Уведомления',
 };
 
 export default function Layout() {
@@ -28,7 +18,14 @@ export default function Layout() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        p: { xs: 0, md: 0 },
+      }}
+    >
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <Box
@@ -41,20 +38,15 @@ export default function Layout() {
           flexDirection: 'column',
         }}
       >
-        {isMobile && (
-          <Box sx={{ p: 1 }}>
-            <IconButton onClick={() => setSidebarOpen(true)}>
-              <Menu />
-            </IconButton>
-          </Box>
-        )}
+        <TopBar showMenu={isMobile} onMenuClick={() => setSidebarOpen(true)} />
 
         <Box
           sx={{
             flex: 1,
-            p: { xs: 2, md: 3 },
+            px: { xs: 2, md: 3 },
+            pb: { xs: 3, md: 4 },
             width: '100%',
-            maxWidth: 1320,
+            maxWidth: 1400,
             mx: 'auto',
           }}
         >
@@ -65,7 +57,7 @@ export default function Layout() {
               initial="initial"
               animate="animate"
               exit="exit"
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
               style={{ width: '100%' }}
             >
               <Outlet />

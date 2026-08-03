@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -34,10 +34,12 @@ import {
   Palette,
   Person,
   Repeat,
+  Telegram,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/authStore';
 import { useSettings } from '../store/settingsStore';
+import PageHeader from '../components/PageHeader';
 import { useToast } from '../store/toastStore';
 import { useTranslation } from '../i18n/useTranslation';
 import { startScreenLabel } from '../i18n/translations';
@@ -53,6 +55,8 @@ import {
   exportTasksData,
   type ExportFormat,
 } from '../utils/exportData';
+import { financeApi, type Account } from '../api/finance';
+import { telegramApi, type TelegramStatus } from '../api/telegram';
 
 const START_SCREENS: StartScreen[] = ['dashboard', 'finance', 'tasks', 'habits', 'calendar', 'analytics'];
 
@@ -158,6 +162,79 @@ export default function Settings() {
   const [currencySelectKey, setCurrencySelectKey] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [tgStatus, setTgStatus] = useState<TelegramStatus | null>(null);
+  const [tgAccounts, setTgAccounts] = useState<Account[]>([]);
+  const [tgDeepLink, setTgDeepLink] = useState<string | null>(null);
+  const [tgLinkToken, setTgLinkToken] = useState<string | null>(null);
+  const [tgBusy, setTgBusy] = useState(false);
+
+  const loadTelegram = async () => {
+    try {
+      const [status, accountsRes] = await Promise.all([
+        telegramApi.getStatus(),
+        financeApi.getAccounts(),
+      ]);
+      setTgStatus(status);
+      setTgAccounts(accountsRes.data);
+    } catch {
+      /* status may fail if service down */
+    }
+  };
+
+  useEffect(() => {
+    void loadTelegram();
+  }, []);
+
+  const copyText = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      showSuccess(t('settings.telegramCopied'));
+    } catch {
+      showError(t('settings.telegramError'));
+    }
+  };
+
+  const handleTelegramLink = async () => {
+    setTgBusy(true);
+    try {
+      const token = await telegramApi.createLinkToken();
+      setTgDeepLink(token.deep_link);
+      setTgLinkToken(token.token);
+      showSuccess(t('settings.telegramLinkCreated'));
+    } catch {
+      showError(t('settings.telegramError'));
+    }
+    setTgBusy(false);
+  };
+
+  const handleTelegramUnlink = async () => {
+    setTgBusy(true);
+    try {
+      await telegramApi.unlink();
+      setTgStatus((prev) =>
+        prev
+          ? { ...prev, linked: false, chat_id_masked: null, default_account_id: null }
+          : prev,
+      );
+      setTgDeepLink(null);
+      setTgLinkToken(null);
+      showSuccess(t('settings.telegramUnlinked'));
+    } catch {
+      showError(t('settings.telegramError'));
+    }
+    setTgBusy(false);
+  };
+
+  const handleDefaultAccount = async (accountId: number | '') => {
+    setTgBusy(true);
+    try {
+      const status = await telegramApi.updateSettings(accountId === '' ? null : accountId);
+      setTgStatus(status);
+    } catch {
+      showError(t('settings.telegramError'));
+    }
+    setTgBusy(false);
+  };
 
   const handleLogout = () => {
     logout();
@@ -207,10 +284,8 @@ export default function Settings() {
   }
 
   return (
-    <Box sx={{ maxWidth: 720, mx: 'auto' }}>
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: 700 }}>
-        {t('settings.title')}
-      </Typography>
+    <Box sx={{ maxWidth: 760, mx: 'auto' }}>
+      <PageHeader title={t('settings.title')} />
 
       <Card sx={{ mb: 3 }}>
         <CardContent>
@@ -430,6 +505,145 @@ export default function Settings() {
           checked={settings.habitsAutoHideCompleted}
           onChange={(v) => updateSettings({ habitsAutoHideCompleted: v })}
         />
+      </SectionAccordion>
+
+      <SectionAccordion icon={<Telegram color="primary" />} title={t('settings.telegram')}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {tgStatus?.linked
+            ? t('settings.telegramLinked', { chat: tgStatus.chat_id_masked || '****' })
+            : t('settings.telegramNotLinked')}
+        </Typography>
+
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+          <Button
+            size="small"
+            variant="contained"
+            disabled={tgBusy}
+            onClick={() => void handleTelegramLink()}
+          >
+            {t('settings.telegramLink')}
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            disabled={tgBusy}
+            onClick={() => void loadTelegram()}
+          >
+            {t('settings.telegramRefresh')}
+          </Button>
+          {tgStatus?.linked ? (
+            <Button
+              size="small"
+              color="error"
+              variant="outlined"
+              disabled={tgBusy}
+              onClick={() => void handleTelegramUnlink()}
+            >
+              {t('settings.telegramUnlink')}
+            </Button>
+          ) : null}
+        </Box>
+
+        {tgDeepLink ? (
+          <Box sx={{ mb: 2 }}>
+            <Alert severity="info" sx={{ mb: 1 }}>
+              {t('settings.telegramLinkCreated')}
+            </Alert>
+            {tgLinkToken ? (
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                {t('settings.telegramLinkHint', { token: tgLinkToken })}
+              </Typography>
+            ) : null}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                component="a"
+                href={tgDeepLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t('settings.telegramOpenLink')}
+              </Button>
+              <Button size="small" variant="text" onClick={() => void copyText(tgDeepLink)}>
+                {t('settings.telegramCopyLink')}
+              </Button>
+              {tgLinkToken ? (
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={() => void copyText(`/start ${tgLinkToken}`)}
+                >
+                  {t('settings.telegramCopyStart')}
+                </Button>
+              ) : null}
+            </Box>
+          </Box>
+        ) : null}
+
+        {tgStatus?.linked ? (
+          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+            <InputLabel>{t('settings.telegramDefaultAccount')}</InputLabel>
+            <Select
+              label={t('settings.telegramDefaultAccount')}
+              value={tgStatus.default_account_id ?? ''}
+              disabled={tgBusy}
+              onChange={(e) => {
+                const v = e.target.value;
+                void handleDefaultAccount(v === '' ? '' : Number(v));
+              }}
+            >
+              <MenuItem value="">{t('settings.telegramNoAccount')}</MenuItem>
+              {tgAccounts.map((acc) => (
+                <MenuItem key={acc.id} value={acc.id}>
+                  {acc.name} ({acc.currency})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        ) : null}
+
+        <Divider sx={{ my: 2 }} />
+        <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+          {t('settings.telegramShortcuts')}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+          {t('settings.telegramShortcutsHelp')}
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{ mb: 1.5, fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}
+        >
+          {t('settings.telegramShortcutsExamples')}
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => void copyText('/expense 350 RUB @Cash Еда кофе')}
+          >
+            {t('settings.telegramCopyExpenseExample')}
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => void copyText('/income 50000 RUB счет:Зарплатная Зарплата')}
+          >
+            {t('settings.telegramCopyIncomeExample')}
+          </Button>
+          {tgStatus?.bot_url ? (
+            <Button
+              size="small"
+              variant="text"
+              component="a"
+              href={tgStatus.bot_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('settings.telegramOpenBot')}
+            </Button>
+          ) : null}
+        </Box>
       </SectionAccordion>
 
       <SectionAccordion icon={<Notifications color="primary" />} title={t('settings.notifications')}>

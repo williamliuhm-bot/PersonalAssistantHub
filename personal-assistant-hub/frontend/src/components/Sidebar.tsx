@@ -1,35 +1,32 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  IconButton,
   Box,
-  Typography,
-  Divider,
+  IconButton,
+  Tooltip,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import {
-  Dashboard,
-  AccountBalance,
-  BarChart,
-  Assignment,
-  CalendarToday,
-  Whatshot,
-  Notifications,
-  Settings,
-  ChevronLeft,
-  AdminPanelSettings,
+  DashboardOutlined,
+  AccountBalanceWalletOutlined,
+  BarChartOutlined,
+  AssignmentOutlined,
+  CalendarMonthOutlined,
+  WhatshotOutlined,
+  NotificationsOutlined,
+  SettingsOutlined,
+  AdminPanelSettingsOutlined,
+  LogoutOutlined,
+  Close,
 } from '@mui/icons-material';
 import { useAuth } from '../store/authStore';
 import { isAdmin } from '../api/auth';
 import { useTranslation } from '../i18n/useTranslation';
 import type { TranslationKey } from '../i18n/translations';
+import { softShadowDark, softShadowLight } from '../theme';
 
-const DRAWER_WIDTH = 260;
+export const SIDEBAR_WIDTH = 84;
 
 interface SidebarProps {
   open: boolean;
@@ -37,13 +34,13 @@ interface SidebarProps {
 }
 
 const navItems: { labelKey: TranslationKey; icon: React.ReactNode; path: string }[] = [
-  { labelKey: 'nav.dashboard', icon: <Dashboard />, path: '/dashboard' },
-  { labelKey: 'nav.finance', icon: <AccountBalance />, path: '/finance' },
-  { labelKey: 'nav.analytics', icon: <BarChart />, path: '/analytics' },
-  { labelKey: 'nav.tasks', icon: <Assignment />, path: '/tasks' },
-  { labelKey: 'nav.calendar', icon: <CalendarToday />, path: '/calendar' },
-  { labelKey: 'nav.habits', icon: <Whatshot />, path: '/habits' },
-  { labelKey: 'nav.notifications', icon: <Notifications />, path: '/notifications' },
+  { labelKey: 'nav.dashboard', icon: <DashboardOutlined />, path: '/dashboard' },
+  { labelKey: 'nav.finance', icon: <AccountBalanceWalletOutlined />, path: '/finance' },
+  { labelKey: 'nav.analytics', icon: <BarChartOutlined />, path: '/analytics' },
+  { labelKey: 'nav.tasks', icon: <AssignmentOutlined />, path: '/tasks' },
+  { labelKey: 'nav.calendar', icon: <CalendarMonthOutlined />, path: '/calendar' },
+  { labelKey: 'nav.habits', icon: <WhatshotOutlined />, path: '/habits' },
+  { labelKey: 'nav.notifications', icon: <NotificationsOutlined />, path: '/notifications' },
 ];
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
@@ -59,121 +56,119 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     if (isMobile) onClose();
   };
 
-  const content = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 2.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: 2,
-              background: 'linear-gradient(135deg, #2563EB, #7C3AED)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 16,
-              fontWeight: 700,
-              color: '#fff',
-            }}
-          >
-            P
-          </Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
-            Assistant Hub
-          </Typography>
-        </Box>
-        {isMobile && (
-          <IconButton onClick={onClose} size="small">
-            <ChevronLeft />
-          </IconButton>
-        )}
-      </Box>
-
-      <Divider sx={{ mx: 2 }} />
-
-      <List sx={{ flex: 1, px: 1, py: 1 }}>
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <ListItemButton
-              key={item.path}
-              onClick={() => handleNavigate(item.path)}
-              sx={{
-                borderRadius: 2,
-                mb: 0.5,
-                color: isActive ? 'primary.main' : 'text.secondary',
-                bgcolor: isActive ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
-                '&:hover': {
-                  bgcolor: isActive ? 'rgba(37, 99, 235, 0.15)' : 'rgba(148, 163, 184, 0.08)',
-                },
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 40,
-                  color: isActive ? 'primary.main' : 'text.secondary',
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={t(item.labelKey)}
-                primaryTypographyProps={{
-                  fontSize: 14,
-                  fontWeight: isActive ? 600 : 400,
-                }}
-              />
-            </ListItemButton>
-          );
-        })}
-      </List>
-
-      <Divider sx={{ mx: 2 }} />
-
-      <List sx={{ px: 1, py: 1 }}>
-        {isAdmin(user) && (
-          <ListItemButton
-            onClick={() => handleNavigate('/admin/users')}
-            sx={{
-              borderRadius: 2,
-              mb: 0.5,
-              color: location.pathname === '/admin/users' ? 'primary.main' : 'text.secondary',
-              bgcolor: location.pathname === '/admin/users' ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
-              '&:hover': {
-                bgcolor: location.pathname === '/admin/users' ? 'rgba(37, 99, 235, 0.15)' : 'rgba(148, 163, 184, 0.08)',
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
-              <AdminPanelSettings />
-            </ListItemIcon>
-            <ListItemText primary={t('nav.admin')} primaryTypographyProps={{ fontSize: 14 }} />
-          </ListItemButton>
-        )}
-        <ListItemButton
-          onClick={() => handleNavigate('/settings')}
+  const NavButton = ({
+    path,
+    icon,
+    label,
+  }: {
+    path: string;
+    icon: React.ReactNode;
+    label: string;
+  }) => {
+    const isActive = location.pathname === path || location.pathname.startsWith(`${path}/`);
+    return (
+      <Tooltip title={label} placement="right">
+        <IconButton
+          onClick={() => handleNavigate(path)}
           sx={{
-            borderRadius: 2,
-            color: location.pathname === '/settings' ? 'primary.main' : 'text.secondary',
-            bgcolor: location.pathname === '/settings' ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
-            '&:hover': { bgcolor: location.pathname === '/settings' ? 'rgba(37, 99, 235, 0.15)' : 'rgba(148, 163, 184, 0.08)' },
+            width: 48,
+            height: 48,
+            borderRadius: 2.5,
+            color: isActive ? 'primary.contrastText' : 'text.secondary',
+            bgcolor: isActive ? 'primary.main' : 'transparent',
+            '&:hover': {
+              bgcolor: isActive ? 'primary.main' : 'action.hover',
+            },
           }}
         >
-          <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
-            <Settings />
-          </ListItemIcon>
-          <ListItemText primary={t('nav.settings')} primaryTypographyProps={{ fontSize: 14 }} />
-        </ListItemButton>
-        <ListItemButton
-          onClick={logout}
-          sx={{ borderRadius: 2, color: 'error.main', '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.08)' } }}
-        >
-          <ListItemText primary={t('nav.logout')} primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }} sx={{ textAlign: 'center' }} />
-        </ListItemButton>
-      </List>
+          {icon}
+        </IconButton>
+      </Tooltip>
+    );
+  };
+
+  const content = (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        height: '100%',
+        py: 2,
+        gap: 1,
+      }}
+    >
+      <Box
+        sx={{
+          width: 44,
+          height: 44,
+          borderRadius: 2.5,
+          bgcolor: 'primary.main',
+          color: 'primary.contrastText',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 800,
+          fontSize: 18,
+          mb: 1.5,
+        }}
+      >
+        H
+      </Box>
+
+      {isMobile && (
+        <IconButton onClick={onClose} sx={{ mb: 1 }}>
+          <Close />
+        </IconButton>
+      )}
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, flex: 1 }}>
+        {navItems.map((item) => (
+          <NavButton
+            key={item.path}
+            path={item.path}
+            icon={item.icon}
+            label={t(item.labelKey)}
+          />
+        ))}
+      </Box>
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mt: 'auto' }}>
+        {isAdmin(user) && (
+          <NavButton
+            path="/admin/users"
+            icon={<AdminPanelSettingsOutlined />}
+            label={t('nav.admin')}
+          />
+        )}
+        <NavButton path="/settings" icon={<SettingsOutlined />} label={t('nav.settings')} />
+        <Tooltip title={t('nav.logout')} placement="right">
+          <IconButton
+            onClick={logout}
+            sx={{
+              width: 48,
+              height: 48,
+              borderRadius: 2.5,
+              color: 'error.main',
+              '&:hover': { bgcolor: 'rgba(239,68,68,0.1)' },
+            }}
+          >
+            <LogoutOutlined />
+          </IconButton>
+        </Tooltip>
+      </Box>
     </Box>
   );
+
+  const paperSx = {
+    width: SIDEBAR_WIDTH,
+    bgcolor: 'background.paper',
+    border: 'none',
+    boxShadow: theme.palette.mode === 'dark' ? softShadowDark : softShadowLight,
+    m: { xs: 0, md: 1.5 },
+    height: { xs: '100%', md: 'calc(100% - 24px)' },
+    borderRadius: { xs: 0, md: 4 },
+  };
 
   if (isMobile) {
     return (
@@ -181,14 +176,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         variant="temporary"
         open={open}
         onClose={onClose}
-        sx={{
-          '& .MuiDrawer-paper': {
-            width: DRAWER_WIDTH,
-            bgcolor: 'background.paper',
-            borderRight: '1px solid',
-            borderColor: 'divider',
-          },
-        }}
+        sx={{ '& .MuiDrawer-paper': paperSx }}
       >
         {content}
       </Drawer>
@@ -200,13 +188,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       variant="permanent"
       open
       sx={{
-        width: DRAWER_WIDTH,
+        width: SIDEBAR_WIDTH + 24,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: DRAWER_WIDTH,
-          bgcolor: 'background.paper',
-          borderRight: '1px solid',
-          borderColor: 'divider',
+          ...paperSx,
+          position: 'relative',
         },
       }}
     >

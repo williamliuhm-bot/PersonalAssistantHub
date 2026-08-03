@@ -17,6 +17,7 @@ import Notifications from './pages/Notifications';
 import AdminRoute from './components/AdminRoute';
 import AdminUsers from './pages/AdminUsers';
 import Settings from './pages/Settings';
+import TelegramMiniApp from './pages/TelegramMiniApp';
 
 function HomeRedirect() {
   const { settings } = useSettings();
@@ -25,12 +26,15 @@ function HomeRedirect() {
 
 export default function App() {
   const { checkAuth, isLoading } = useAuth();
+  const isTelegramMiniApp = window.location.pathname.startsWith('/tg');
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    if (!isTelegramMiniApp) {
+      checkAuth();
+    }
+  }, [checkAuth, isTelegramMiniApp]);
 
-  if (isLoading) {
+  if (isLoading && !isTelegramMiniApp) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: 'background.default' }}>
         <CircularProgress />
@@ -41,6 +45,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/tg" element={<TelegramMiniApp />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<HomeRedirect />} />
         <Route path="dashboard" element={<Dashboard />} />

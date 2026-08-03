@@ -2,12 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Card,
   TextField,
   Button,
   Typography,
-  Tabs,
-  Tab,
   Alert,
   InputAdornment,
   IconButton,
@@ -17,6 +14,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../store/authStore';
 import { useSettings } from '../store/settingsStore';
 import { getStartScreenPath } from '../types/settings';
+import SoftCard from '../components/SoftCard';
 
 export default function Login() {
   const [tabIndex, setTabIndex] = useState(0);
@@ -68,7 +66,7 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      await register({ username, email, password, password2 });
+      await register({ username, email, password });
       navigate(getStartScreenPath(settings.startScreen), { replace: true });
     } catch (err: any) {
       const detail = err.response?.data;
@@ -91,79 +89,99 @@ export default function Login() {
         bgcolor: 'background.default',
         position: 'relative',
         overflow: 'hidden',
+        p: 2,
       }}
     >
       <Box
         sx={{
           position: 'absolute',
-          top: -200,
-          right: -200,
-          width: 500,
-          height: 500,
+          top: -160,
+          right: -120,
+          width: 420,
+          height: 420,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%)',
         }}
       />
       <Box
         sx={{
           position: 'absolute',
-          bottom: -200,
-          left: -200,
-          width: 400,
-          height: 400,
+          bottom: -180,
+          left: -140,
+          width: 380,
+          height: 380,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)',
         }}
       />
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
+        style={{ width: '100%', maxWidth: 440, position: 'relative' }}
       >
-        <Card
-          sx={{
-            width: 420,
-            p: 4,
-            position: 'relative',
-            backdropFilter: 'blur(20px)',
-          }}
-        >
+        <SoftCard padding={4}>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
             <Box
               sx={{
                 width: 56,
                 height: 56,
                 borderRadius: 3,
-                background: 'linear-gradient(135deg, #2563EB, #7C3AED)',
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 24,
-                fontWeight: 700,
-                color: '#fff',
+                fontSize: 22,
+                fontWeight: 800,
                 mx: 'auto',
                 mb: 2,
               }}
             >
-              P
+              H
             </Box>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              Personal Assistant Hub
+            <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+              Assistant Hub
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Управляйте финансами, задачами и привычками
+              Финансы, задачи и привычки в одном месте
             </Typography>
           </Box>
 
-          <Tabs
-            value={tabIndex}
-            onChange={(_, v) => { setTabIndex(v); setError(''); }}
-            sx={{ mb: 3, '& .MuiTabs-indicator': { borderRadius: 1 } }}
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              p: 0.5,
+              borderRadius: 999,
+              bgcolor: 'action.hover',
+              mb: 3,
+            }}
           >
-            <Tab label="Вход" sx={{ flex: 1 }} />
-            <Tab label="Регистрация" sx={{ flex: 1 }} />
-          </Tabs>
+            {['Вход', 'Регистрация'].map((label, idx) => (
+              <Box
+                key={label}
+                onClick={() => {
+                  setTabIndex(idx);
+                  setError('');
+                }}
+                sx={{
+                  flex: 1,
+                  textAlign: 'center',
+                  py: 1,
+                  borderRadius: 999,
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  bgcolor: tabIndex === idx ? 'background.paper' : 'transparent',
+                  boxShadow: tabIndex === idx ? 1 : 0,
+                }}
+              >
+                {label}
+              </Box>
+            ))}
+          </Box>
 
           {error && (
             <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
@@ -208,13 +226,7 @@ export default function Login() {
                   ),
                 }}
               />
-              <Button
-                variant="contained"
-                size="large"
-                onClick={handleLogin}
-                disabled={loading}
-                sx={{ mt: 1, py: 1.3 }}
-              >
+              <Button variant="contained" size="large" onClick={handleLogin} disabled={loading} sx={{ mt: 1, py: 1.4 }}>
                 {loading ? 'Вход...' : 'Войти'}
               </Button>
             </Box>
@@ -283,18 +295,12 @@ export default function Login() {
                   ),
                 }}
               />
-              <Button
-                variant="contained"
-                size="large"
-                onClick={handleRegister}
-                disabled={loading}
-                sx={{ mt: 1, py: 1.3 }}
-              >
+              <Button variant="contained" size="large" onClick={handleRegister} disabled={loading} sx={{ mt: 1, py: 1.4 }}>
                 {loading ? 'Регистрация...' : 'Зарегистрироваться'}
               </Button>
             </Box>
           )}
-        </Card>
+        </SoftCard>
       </motion.div>
     </Box>
   );

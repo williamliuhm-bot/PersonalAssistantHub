@@ -24,7 +24,12 @@ async def create_project(
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    project = Project(user_id=user_id, name=body.name, description=body.description)
+    project = Project(
+        user_id=user_id,
+        name=body.name,
+        description=body.description,
+        color=body.color or "#6366f1",
+    )
     db.add(project)
     await db.commit()
     await db.refresh(project)

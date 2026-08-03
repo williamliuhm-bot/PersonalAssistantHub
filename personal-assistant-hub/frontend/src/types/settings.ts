@@ -11,6 +11,7 @@ export type PrimaryCurrency = 'RUB' | 'USD' | 'EUR' | 'GBP';
 export type BalanceMode = 'actual' | 'budget';
 export type CompletedTasksBehavior = 'hide' | 'keep';
 export type WeekStartDay = 0 | 1 | 6;
+export type SelectedProjectId = number | 'all';
 
 export interface ModuleNotifications {
   push: boolean;
@@ -38,6 +39,7 @@ export interface UserSettings {
   defaultTaskTime: string;
   defaultReminderMinutes: number;
   completedTasksBehavior: CompletedTasksBehavior;
+  selectedProjectId: SelectedProjectId;
 
   dayStartHour: number;
   habitsReminderTime: string;
@@ -73,6 +75,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   defaultTaskTime: '10:00',
   defaultReminderMinutes: 30,
   completedTasksBehavior: 'keep',
+  selectedProjectId: 'all',
 
   dayStartHour: 4,
   habitsReminderTime: '08:00',

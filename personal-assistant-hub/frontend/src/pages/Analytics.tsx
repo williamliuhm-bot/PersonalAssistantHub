@@ -31,6 +31,7 @@ import {
 } from '../api/analytics';
 import { formatMoney } from '../utils/currency';
 import { useSettings } from '../store/settingsStore';
+import PageHeader from '../components/PageHeader';
 import {
   buildExpenseBreakdownForRange,
   buildDailyFlowRub,
@@ -41,13 +42,13 @@ import {
   toLocalDateString,
 } from '../utils/financeStats';
 
-const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
+const COLORS = ['#111827', '#10B981', '#F59E0B', '#EF4444', '#6366F1', '#EC4899', '#06B6D4', '#F97316'];
 
 const CURRENCY_LINE_COLORS: Record<string, string> = {
-  RUB: '#2563EB',
+  RUB: '#111827',
   USD: '#10B981',
   EUR: '#F59E0B',
-  GBP: '#8B5CF6',
+  GBP: '#6366F1',
 };
 
 const itemVariants = {
@@ -219,7 +220,7 @@ export default function Analytics() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: 700 }}>Отчеты</Typography>
+      <PageHeader title="Отчёты" subtitle="Аналитика финансов и продуктивности" />
 
       <Tabs
         value={tabValue}

@@ -6,11 +6,13 @@ from typing import Optional
 class ProjectCreate(BaseModel):
     name: str
     description: Optional[str] = ""
+    color: Optional[str] = "#6366f1"
 
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    color: Optional[str] = None
 
 
 class ProjectResponse(BaseModel):
@@ -18,6 +20,7 @@ class ProjectResponse(BaseModel):
     user_id: int
     name: str
     description: Optional[str] = ""
+    color: Optional[str] = "#6366f1"
     created_at: Optional[datetime.datetime] = None
     updated_at: Optional[datetime.datetime] = None
 

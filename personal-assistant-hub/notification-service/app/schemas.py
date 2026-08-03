@@ -32,3 +32,21 @@ class SendNotificationResponse(BaseModel):
 class MarkReadResponse(BaseModel):
     id: str
     is_read: bool
+
+
+class TelegramLinkTokenResponse(BaseModel):
+    token: str
+    deep_link: str
+    expires_at: datetime
+
+
+class TelegramStatusResponse(BaseModel):
+    linked: bool
+    chat_id_masked: Optional[str] = None
+    default_account_id: Optional[int] = None
+    bot_username: Optional[str] = None
+    bot_url: Optional[str] = None
+
+
+class TelegramSettingsUpdate(BaseModel):
+    default_account_id: Optional[int] = None
