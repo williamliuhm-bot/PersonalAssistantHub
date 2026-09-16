@@ -3,7 +3,7 @@ import { createTheme } from '@mui/material/styles';
 type PaletteMode = 'light' | 'dark';
 
 export const softShadowLight = '0 8px 30px rgba(15, 23, 42, 0.06)';
-export const softShadowDark = '0 8px 30px rgba(0, 0, 0, 0.35)';
+export const softShadowDark = '0 8px 30px rgba(0, 0, 0, 0.45)';
 
 export function createAppTheme(mode: PaletteMode) {
   const isDark = mode === 'dark';
@@ -24,7 +24,7 @@ export function createAppTheme(mode: PaletteMode) {
     palette: {
       mode,
       primary: isDark
-        ? { main: '#F8FAFC', light: '#FFFFFF', dark: '#E2E8F0', contrastText: '#0F172A' }
+        ? { main: '#FFFFFF', light: '#FFFFFF', dark: '#E5E7EB', contrastText: '#000000' }
         : { main: '#111827', light: '#374151', dark: '#030712', contrastText: '#FFFFFF' },
       secondary: { main: '#6366F1', light: '#818CF8', dark: '#4F46E5' },
       success: { main: '#10B981', light: '#34D399', dark: '#059669' },
@@ -32,25 +32,33 @@ export function createAppTheme(mode: PaletteMode) {
       error: { main: '#EF4444', light: '#F87171', dark: '#DC2626' },
       info: { main: '#3B82F6', light: '#60A5FA', dark: '#2563EB' },
       background: isDark
-        ? { default: '#12141A', paper: '#1C1F28' }
+        ? { default: '#000000', paper: '#0B0B0B' }
         : { default: '#EEF0F4', paper: '#FFFFFF' },
-      divider: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15, 23, 42, 0.06)',
+      divider: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(15, 23, 42, 0.06)',
       text: isDark
-        ? { primary: '#F1F5F9', secondary: '#94A3B8' }
+        ? { primary: '#FFFFFF', secondary: '#B8BEC9' }
         : { primary: '#0F172A', secondary: '#6B7280' },
       action: {
-        hover: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.04)',
-        selected: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.06)',
+        hover: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.04)',
+        selected: isDark ? 'rgba(255,255,255,0.11)' : 'rgba(15,23,42,0.06)',
       },
     },
     components: {
       MuiCssBaseline: {
         styleOverrides: {
+          html: {
+            backgroundColor: isDark ? '#000000' : '#EEF0F4',
+          },
           body: {
+            backgroundColor: isDark ? '#000000' : '#EEF0F4',
             backgroundImage: isDark
-              ? 'radial-gradient(ellipse at top left, rgba(99,102,241,0.08), transparent 50%)'
+              ? 'none'
               : 'radial-gradient(ellipse at top right, rgba(99,102,241,0.06), transparent 45%)',
             backgroundAttachment: 'fixed',
+          },
+          '#root': {
+            minHeight: '100vh',
+            backgroundColor: isDark ? '#000000' : '#EEF0F4',
           },
         },
       },
@@ -65,7 +73,11 @@ export function createAppTheme(mode: PaletteMode) {
           },
           containedPrimary: {
             ...(isDark
-              ? {}
+              ? {
+                  backgroundColor: '#FFFFFF',
+                  color: '#000000',
+                  '&:hover': { backgroundColor: '#E5E7EB' },
+                }
               : {
                   backgroundColor: '#111827',
                   '&:hover': { backgroundColor: '#030712' },
@@ -98,13 +110,13 @@ export function createAppTheme(mode: PaletteMode) {
           root: {
             '& .MuiOutlinedInput-root': {
               borderRadius: 14,
-              backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.03)',
+              backgroundColor: isDark ? '#101010' : 'rgba(15,23,42,0.03)',
               '& fieldset': { borderColor: 'transparent' },
               '&:hover fieldset': {
-                borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.1)',
+                borderColor: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.1)',
               },
               '&.Mui-focused fieldset': {
-                borderColor: isDark ? '#F8FAFC' : '#111827',
+                borderColor: isDark ? '#FFFFFF' : '#111827',
                 borderWidth: 1.5,
               },
             },
@@ -143,7 +155,7 @@ export function createAppTheme(mode: PaletteMode) {
       MuiTableCell: {
         styleOverrides: {
           root: {
-            borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.06)',
+            borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)',
           },
         },
       },
@@ -164,5 +176,5 @@ export function createAppTheme(mode: PaletteMode) {
   });
 }
 
-const theme = createAppTheme('light');
+const theme = createAppTheme('dark');
 export default theme;
