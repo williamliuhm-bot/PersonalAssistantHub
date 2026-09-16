@@ -9,8 +9,15 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { NotificationsOutlined, Search, Menu as MenuIcon } from '@mui/icons-material';
+import {
+  DarkModeOutlined,
+  LightModeOutlined,
+  Menu as MenuIcon,
+  NotificationsOutlined,
+  Search,
+} from '@mui/icons-material';
 import { useAuth } from '../store/authStore';
+import { useSettings } from '../store/settingsStore';
 import { useTranslation } from '../i18n/useTranslation';
 
 interface TopBarProps {
@@ -22,8 +29,14 @@ export default function TopBar({ onMenuClick, showMenu }: TopBarProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { language, setLanguage } = useTranslation();
+  const { settings, updateSettings } = useSettings();
 
   const initials = (user?.username || user?.email || 'U').slice(0, 1).toUpperCase();
+  const isDark = settings.theme === 'dark';
+
+  const toggleTheme = () => {
+    updateSettings({ theme: isDark ? 'light' : 'dark' });
+  };
 
   return (
     <Box
@@ -77,6 +90,17 @@ export default function TopBar({ onMenuClick, showMenu }: TopBarProps) {
       />
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 'auto' }}>
+        <Tooltip title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
+          <IconButton
+            size="small"
+            onClick={toggleTheme}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            sx={{ bgcolor: 'background.paper' }}
+          >
+            {isDark ? <LightModeOutlined /> : <DarkModeOutlined />}
+          </IconButton>
+        </Tooltip>
+
         <Tooltip title={language === 'ru' ? 'English' : 'Русский'}>
           <IconButton
             size="small"
