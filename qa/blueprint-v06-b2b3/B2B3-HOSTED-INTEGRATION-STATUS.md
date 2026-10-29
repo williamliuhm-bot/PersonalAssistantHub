@@ -10,6 +10,8 @@
 
 Latest update: I01-E2 adds eight previously uncovered negative methods, repairs clock exception redaction/classification, and passes 34/34. See `I01-E2-RESULT.md`. I01-E3 contract analysis is a reviewable proposal in `I01-E3-IDENTITY-CONTRACT-PROPOSAL.md`; no schema or live provider was created. The original 26-test evidence below is retained as historical baseline, not relabeled as a new run.
 
+Contract-review follow-up: `I01-E3-CONTRACT-REVIEW.md` narrows authority/revocation/recovery decisions; `I02-VERSION-STORE-DESIGN.md` specifies the draft three-entity version store, separate intent/content hashes and future atomic transaction. A QA-only pure intent/equality helper has passing evidence for 20 new unique test methods (19 first-run passes plus one failed method repaired and rerun). No existing identity or PG17 suite was rerun, and no application writer/schema/permissions were introduced. The proposed schema, live sealed profile and facade remain pending review.
+
 ## Preserved evidence and boundaries
 
 The prior PG17.11 SQL suite remains 5/5 PASS, static 20/20 PASS, source manifest 17/17 MATCH, as recorded in `PG17-RUNTIME-ACCEPTANCE.md` and `PG17-RUNTIME-RESULT.json`. None of those tests or PostgreSQL databases was started, recreated or rerun in this batch. Their SQL, runner, manifest and evidence files are unchanged. Phase 9 OFF; CX-174 BLOCKED; Release Gate LOCAL_REVIEW_READY. No Merge, Deploy, Production write, paid Watch/Research, new connector, dependency installation or new secret.

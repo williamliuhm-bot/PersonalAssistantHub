@@ -1,0 +1,6 @@
+test_invalid_numeric_constants_are_rejected (__main__.PublicationContractTests.test_invalid_numeric_constants_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

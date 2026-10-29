@@ -1,0 +1,60 @@
+{
+  "date_hkt": "2026-10-29",
+  "repository": "williamliuhm-bot/PersonalAssistantHub",
+  "branch": "qa/blueprint-v06-b2b3-pg17-20261029",
+  "baseline": "ea8eff87f5d41c735d682546b74e36a3f10c0266",
+  "contract_review": "ANALYSIS_COMPLETE_REVIEW_REQUIRED_FOR_POLICY_SCHEMA_AND_PRIVILEGES",
+  "I02_version_store_design": "DRAFT_ONLY_NO_DDL_OR_ORM_MODEL",
+  "qa_program": "Pure draft-intent binding and recovery equality; no authentication, signing, receipt issuance/consumption, SQL, network, route or publication",
+  "tests": {
+    "first_run": {
+      "methods": 20,
+      "pass": 19,
+      "errors": 1,
+      "exit_code": 1
+    },
+    "targeted_repair_run": {
+      "methods": 1,
+      "pass": 1,
+      "exit_code": 0,
+      "method": "test_invalid_numeric_constants_are_rejected"
+    },
+    "unique_methods_with_passing_evidence": 20,
+    "full_post_fix_suite_rerun": false,
+    "reused_first_run_passes": 19,
+    "repair": "Catch DecimalException and retain stable invalid_spec_json diagnostic for unrepresentable numeric exponents"
+  },
+  "source_sha256": {
+    "qa/blueprint-v06-b2b3/publication_contract.py": "9c2c5148d43289e0ce9ba925bab86e0f8efd67cfae4c4d2552ec5925c72f0b43",
+    "qa/blueprint-v06-b2b3/test_publication_contract.py": "9aeff1c2bed4031c92119db19d37de1f291d6baa570816fb738d2049118b5750"
+  },
+  "old_identity_34_tests_rerun": false,
+  "old_pg17_tests_rerun": false,
+  "application_or_original_sql_changed": false,
+  "schema_grants_changed": false,
+  "production_modified": false,
+  "merge": false,
+  "deploy": false,
+  "phase9": "OFF",
+  "cx174": "BLOCKED",
+  "release_gate": "LOCAL_REVIEW_READY",
+  "blocking_decisions": [
+    "C1 authoritative tenant and membership owner/policy",
+    "C2 real async Auth/session/revocation contract and Login pause",
+    "C3 actual version store, hash profile, one-store transaction and privilege review",
+    "C4 isolated hosted resource ownership/TLS/quota"
+  ],
+  "xiaomi": {
+    "calls": 1,
+    "retries": 0,
+    "model": "mimo-v2.6-pro",
+    "input_tokens": 130,
+    "output_tokens": 248,
+    "reasoning_tokens": 178,
+    "total_tokens": 378,
+    "integrated_method": "test_version_kind_changes_intent_digest"
+  },
+  "codex_tokens": null,
+  "codex_usage": "Exact task tokens not provided",
+  "tracker": "PENDING_SYNC_NO_EXISTING_BLUEPRINT_TASK_FOUND"
+}
