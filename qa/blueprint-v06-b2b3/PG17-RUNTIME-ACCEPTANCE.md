@@ -51,3 +51,7 @@ Only the dedicated QA branch and local isolated databases were modified. No Prod
 Tracker/Ledger: **PENDING_SYNC**. Live lookup found no existing Blueprint task/CX record to attach an executor receipt to. No task ID, completion receipt or new continuity record was fabricated; no Production control-data write was made.
 
 This batch Xiaomi: **1 call**, returned **No text output**; Input **231**, Output **1,400**, Total **1,631** tokens. Raw reasoning detail **1,402** exceeds output in the connector receipt; preserved as returned, not corrected or added again. Codex exact tokens **not provided**. No Xiaomi code was integrated in this batch; after its bounded failed output, Codex made the narrow fixes and ChatGPT reviewed the security gate.
+
+## Final checkout portability verification
+
+Remote readback exposed CRLF conversion in the newly archived original/ subdirectory. Added scoped LF rules for its SQL/text files as well. Source Git blobs and the tested SQL bytes were unchanged. After this checkout-only correction all 17 manifest entries matched again; no SQL behavior changed and no unnecessary database rerun was performed.

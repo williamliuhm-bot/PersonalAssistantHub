@@ -3,3 +3,5 @@ qa/blueprint-v06-b2b3/*.sql text eol=lf
 qa/blueprint-v06-b2b3/*.py text eol=lf
 qa/blueprint-v06-b2b3/*.md text eol=lf
 qa/blueprint-v06-b2b3/*.txt text eol=lf
+qa/blueprint-v06-b2b3/original/*.sql text eol=lf
+qa/blueprint-v06-b2b3/original/*.txt text eol=lf
