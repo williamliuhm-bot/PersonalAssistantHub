@@ -1,0 +1,225 @@
+{
+  "classification": "STATIC_SOURCE_ONLY_NOT_HOSTED_VERIFICATION",
+  "compose": [
+    {
+      "source": "docker-compose.yml",
+      "declared_services": [
+        {
+          "name": "postgres",
+          "declared_role": "postgres"
+        },
+        {
+          "name": "redis",
+          "declared_role": "redis"
+        },
+        {
+          "name": "api-gateway",
+          "declared_role": "service"
+        },
+        {
+          "name": "auth-service",
+          "declared_role": "service"
+        },
+        {
+          "name": "finance-service",
+          "declared_role": "service"
+        },
+        {
+          "name": "tasks-service",
+          "declared_role": "service"
+        },
+        {
+          "name": "notification-service",
+          "declared_role": "service"
+        },
+        {
+          "name": "integration-service",
+          "declared_role": "service"
+        },
+        {
+          "name": "frontend",
+          "declared_role": "service"
+        },
+        {
+          "name": "notification-celery-worker",
+          "declared_role": "celery_worker"
+        },
+        {
+          "name": "celery-worker",
+          "declared_role": "celery_worker"
+        },
+        {
+          "name": "celery-beat",
+          "declared_role": "celery_scheduler"
+        }
+      ]
+    },
+    {
+      "source": "deploy/docker-compose.prod.yml",
+      "declared_services": [
+        {
+          "name": "postgres",
+          "declared_role": "postgres"
+        },
+        {
+          "name": "redis",
+          "declared_role": "redis"
+        },
+        {
+          "name": "api-gateway",
+          "declared_role": "service"
+        },
+        {
+          "name": "auth-service",
+          "declared_role": "service"
+        },
+        {
+          "name": "finance-service",
+          "declared_role": "service"
+        },
+        {
+          "name": "tasks-service",
+          "declared_role": "service"
+        },
+        {
+          "name": "notification-service",
+          "declared_role": "service"
+        },
+        {
+          "name": "integration-service",
+          "declared_role": "service"
+        },
+        {
+          "name": "notification-celery-worker",
+          "declared_role": "service"
+        },
+        {
+          "name": "celery-worker",
+          "declared_role": "service"
+        },
+        {
+          "name": "celery-beat",
+          "declared_role": "service"
+        },
+        {
+          "name": "frontend",
+          "declared_role": "service"
+        },
+        {
+          "name": "caddy",
+          "declared_role": "caddy"
+        }
+      ]
+    }
+  ],
+  "orm_table_declarations": [
+    {
+      "table": "users",
+      "source": "auth-service/app/models.py"
+    },
+    {
+      "table": "accounts",
+      "source": "finance-service/app/models.py"
+    },
+    {
+      "table": "categories",
+      "source": "finance-service/app/models.py"
+    },
+    {
+      "table": "transactions",
+      "source": "finance-service/app/models.py"
+    },
+    {
+      "table": "budgets",
+      "source": "finance-service/app/models.py"
+    },
+    {
+      "table": "productivity_reports",
+      "source": "integration-service/app/models.py"
+    },
+    {
+      "table": "budget_forecasts",
+      "source": "integration-service/app/models.py"
+    },
+    {
+      "table": "notifications",
+      "source": "notification-service/app/models.py"
+    },
+    {
+      "table": "telegram_links",
+      "source": "notification-service/app/models.py"
+    },
+    {
+      "table": "telegram_link_tokens",
+      "source": "notification-service/app/models.py"
+    },
+    {
+      "table": "projects",
+      "source": "tasks-service/app/models.py"
+    },
+    {
+      "table": "tasks",
+      "source": "tasks-service/app/models.py"
+    },
+    {
+      "table": "habits",
+      "source": "tasks-service/app/models.py"
+    },
+    {
+      "table": "habit_logs",
+      "source": "tasks-service/app/models.py"
+    },
+    {
+      "table": "users",
+      "source": "shared/models.py"
+    },
+    {
+      "table": "accounts",
+      "source": "shared/models.py"
+    },
+    {
+      "table": "categories",
+      "source": "shared/models.py"
+    },
+    {
+      "table": "transactions",
+      "source": "shared/models.py"
+    },
+    {
+      "table": "budgets",
+      "source": "shared/models.py"
+    },
+    {
+      "table": "projects",
+      "source": "shared/models.py"
+    },
+    {
+      "table": "tasks",
+      "source": "shared/models.py"
+    },
+    {
+      "table": "habits",
+      "source": "shared/models.py"
+    },
+    {
+      "table": "habit_logs",
+      "source": "shared/models.py"
+    },
+    {
+      "table": "notifications",
+      "source": "shared/models.py"
+    },
+    {
+      "table": "productivity_reports",
+      "source": "shared/models.py"
+    },
+    {
+      "table": "budget_forecasts",
+      "source": "shared/models.py"
+    }
+  ],
+  "caddy_source_present": true,
+  "hosted_ownership_verified": false,
+  "hosted_slots_quota_tls_store_verified": false,
+  "secrets_or_environment_values_read": false
+}

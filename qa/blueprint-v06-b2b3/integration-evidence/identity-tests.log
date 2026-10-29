@@ -1,0 +1,31 @@
+test_access_expiry_after_authority_await (__main__.IdentityBoundaryTests.test_access_expiry_after_authority_await) ... ok
+test_approver_cannot_request_critical_scope (__main__.IdentityBoundaryTests.test_approver_cannot_request_critical_scope) ... ok
+test_authority_outage_never_uses_cache (__main__.IdentityBoundaryTests.test_authority_outage_never_uses_cache) ... ok
+test_client_role_cannot_elevate_membership (__main__.IdentityBoundaryTests.test_client_role_cannot_elevate_membership) ... ok
+test_default_off_does_not_touch_dependencies (__main__.IdentityBoundaryTests.test_default_off_does_not_touch_dependencies) ... ok
+test_environment_flag_requires_exact_one_and_dependencies (__main__.IdentityBoundaryTests.test_environment_flag_requires_exact_one_and_dependencies) ... ok
+test_expired_access_token_does_not_query_authority (__main__.IdentityBoundaryTests.test_expired_access_token_does_not_query_authority) ... ok
+test_forged_subject_denied (__main__.IdentityBoundaryTests.test_forged_subject_denied) ... ok
+test_integer_user_and_uuid_mapping_are_strict (__main__.IdentityBoundaryTests.test_integer_user_and_uuid_mapping_are_strict) ... ok
+test_invalid_subject_types (__main__.IdentityBoundaryTests.test_invalid_subject_types) ... ok
+test_invalid_target_inputs (__main__.IdentityBoundaryTests.test_invalid_target_inputs) ... ok
+test_live_user_session_membership_and_blacklist (__main__.IdentityBoundaryTests.test_live_user_session_membership_and_blacklist) ... ok
+test_malformed_raw_token (__main__.IdentityBoundaryTests.test_malformed_raw_token) ... ok
+test_missing_authority_record_denied (__main__.IdentityBoundaryTests.test_missing_authority_record_denied) ... ok
+test_missing_backend_identity (__main__.IdentityBoundaryTests.test_missing_backend_identity) ... ok
+test_nonfinite_or_invalid_times (__main__.IdentityBoundaryTests.test_nonfinite_or_invalid_times) ... ok
+test_refresh_token_is_not_access_identity (__main__.IdentityBoundaryTests.test_refresh_token_is_not_access_identity) ... ok
+test_replayed_revoked_token_rechecks_live_state (__main__.IdentityBoundaryTests.test_replayed_revoked_token_rechecks_live_state) ... ok
+test_required_claims_cannot_be_omitted (__main__.IdentityBoundaryTests.test_required_claims_cannot_be_omitted) ... ok
+test_stale_future_and_expired_authority (__main__.IdentityBoundaryTests.test_stale_future_and_expired_authority) ... ok
+test_stale_generation_denied (__main__.IdentityBoundaryTests.test_stale_generation_denied) ... ok
+test_tenant_crossing_denied (__main__.IdentityBoundaryTests.test_tenant_crossing_denied) ... ok
+test_token_fingerprint_is_bound (__main__.IdentityBoundaryTests.test_token_fingerprint_is_bound) ... ok
+test_unverified_or_missing_claims_denied (__main__.IdentityBoundaryTests.test_unverified_or_missing_claims_denied) ... ok
+test_valid_identity_uses_only_authoritative_uuid_mapping (__main__.IdentityBoundaryTests.test_valid_identity_uses_only_authoritative_uuid_mapping) ... ok
+test_verifier_errors_are_redacted (__main__.IdentityBoundaryTests.test_verifier_errors_are_redacted) ... ok
+
+----------------------------------------------------------------------
+Ran 26 tests in 0.646s
+
+OK

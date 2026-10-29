@@ -1,0 +1,50 @@
+{
+  "date_hkt": "2026-10-29",
+  "repository": "williamliuhm-bot/PersonalAssistantHub",
+  "branch": "qa/blueprint-v06-b2b3-pg17-20261029",
+  "baseline": "55762ec2c3ab14ffcfe1ea4e22b44a8112258bf0",
+  "I01": "OFFLINE_ADAPTER_IMPLEMENTED_LIVE_BINDING_BLOCKED",
+  "I02": "BLOCKED_MISSING_APPLICATION_VERSION_STORE_AND_IDENTITY_MAPPING",
+  "I03": "STATIC_READINESS_INVENTORIED_HOSTED_UNVERIFIED",
+  "tests": {
+    "kind": "offline unittest with synthetic decoder and authority fixtures",
+    "pass": 26,
+    "fail": 0,
+    "elapsed_seconds": 0.646,
+    "inventory_source_run": "PASS",
+    "inventory_privacy_and_tab_smoke_check": "PASS",
+    "python_ast_parse": "3 new files PASS"
+  },
+  "source_sha256": {
+    "personal-assistant-hub/integration-service/app/blueprint_identity.py": "274e322694c785fa09161e1b3507edc1453c9d431b588d864be3d00dd09450e6",
+    "qa/blueprint-v06-b2b3/test_identity_boundary.py": "40bc16fb6b14b06a1d61224ccae4da0d97461fdb963fb9d5c41e812bd3a03040",
+    "qa/blueprint-v06-b2b3/inventory_hosted_source.py": "9086738dc94c768b75846e8e188aeacb2445902e8453b791854d671a50a3c83b"
+  },
+  "prior_pg17_evidence": "REUSED_UNCHANGED_5_OF_5_PASS_NOT_RERUN",
+  "feature_flag": "BLUEPRINT_B2B3_IDENTITY_ENABLED defaults OFF; flag alone cannot enable without dependencies",
+  "application_route_registered": false,
+  "schema_grants_changed": false,
+  "login_flow_changed": false,
+  "hosted_auth_e2e": "NOT RUN",
+  "publication_atomicity_adapter_tests": "NOT RUN, no actual version store contract",
+  "paid_resources_provisioned": false,
+  "production_modified": false,
+  "merge": false,
+  "deploy": false,
+  "tracker": "PENDING_SYNC_NO_EXISTING_BLUEPRINT_TASK_FOUND",
+  "phase9": "OFF",
+  "cx174": "BLOCKED",
+  "release_gate": "LOCAL_REVIEW_READY",
+  "xiaomi": {
+    "status": "configured Xiaomi 1 mimo-v2.6-pro",
+    "generation_calls": 1,
+    "outcome": "Transport closed",
+    "input_tokens": null,
+    "output_tokens": null,
+    "total_tokens": null,
+    "usage_status": "No receipt returned; unknown, not estimated or treated as zero",
+    "generated_code_integrated": false
+  },
+  "codex_tokens": null,
+  "codex_usage_status": "Exact task tokens not provided"
+}
