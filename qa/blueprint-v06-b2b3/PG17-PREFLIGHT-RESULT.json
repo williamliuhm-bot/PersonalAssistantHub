@@ -1,0 +1,68 @@
+{
+  "batch": "20261029-branch-preflight",
+  "repository": "williamliuhm-bot/PersonalAssistantHub",
+  "branch": "qa/blueprint-v06-b2b3-pg17-20261029",
+  "tested_commit": "4c00a2ba6535206dbdb560b3acca034b966b6d07",
+  "script": "qa/blueprint-v06-b2b3/preflight_only.sh",
+  "actual_runtime": {
+    "postgresql": "17.11",
+    "database": "blueprint_qa_b2b3_20261029",
+    "host": "127.0.0.1",
+    "port": 55489,
+    "transaction_read_only": "on",
+    "roles": [
+      {
+        "name": "anon",
+        "superuser": false,
+        "bypassrls": false,
+        "login": false
+      },
+      {
+        "name": "authenticated",
+        "superuser": false,
+        "bypassrls": false,
+        "login": false
+      }
+    ],
+    "exit_code": 0,
+    "result": "PASS: isolated PostgreSQL 17 target and roles; SQL runtime acceptance NOT RUN",
+    "shutdown": "clean"
+  },
+  "authentication_maintenance": "Original temporary bootstrap password had been discarded. Rotated only the stopped disposable cluster's blueprint_qa_admin password via local single-user mode; TCP SCRAM and pg_hba.conf remained unchanged. Temporary credential not exported.",
+  "initial_attempt": {
+    "exit_code": 3,
+    "result": "NOT RUN: psql missing",
+    "fix": "Added existing portable PostgreSQL bin directory to the runner process PATH; no installation."
+  },
+  "module_tests": {
+    "receipt_issuance": "NOT RUN",
+    "receipt_consumption": "NOT RUN",
+    "trusted_identity": "NOT RUN",
+    "revocation": "NOT RUN",
+    "replay": "NOT RUN",
+    "version_publication": "NOT RUN",
+    "expiry": "NOT RUN",
+    "module_rls": "NOT RUN",
+    "public_acl": "NOT RUN"
+  },
+  "source_blocker": "Branch handoff contains only the checkpoint and preflight. The original 15 SQL/runner/test files and expected QA ZIP are absent from this branch and searched local source locations. Do not recreate the implementation from summaries or report module Runtime PASS.",
+  "newline_change": "Xiaomi suggested a QA-path-only .gitattributes LF rule. Codex applied it and normalized the local shell file. Git reports no shell-logic diff; shell syntax check passed. The original runtime failure was missing psql in PATH, not a proven CRLF failure.",
+  "xiaomi": {
+    "provider": "Xiaomi MiMo",
+    "model": "mimo-v2.6-pro",
+    "calls": 1,
+    "input_tokens": 139,
+    "output_tokens": 691,
+    "reasoning_tokens": 587,
+    "total_tokens": 830,
+    "usage_scope": "this batch only; reasoning detail not added again to total",
+    "result": "usable LF portability suggestion returned; integrated by Codex"
+  },
+  "codex_tokens": null,
+  "codex_tokens_status": "Exact task token usage not provided",
+  "phase9": "OFF",
+  "release_gate": "LOCAL_REVIEW_READY",
+  "production_modified": false,
+  "merge": false,
+  "deploy": false
+}

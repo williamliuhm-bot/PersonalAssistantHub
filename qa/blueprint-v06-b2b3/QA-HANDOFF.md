@@ -13,3 +13,19 @@ Important: the archive's `run_batch.sh` is an older 544-byte runner, lacking lat
 Codex has reported a local isolated PG17.11 database `blueprint_qa_b2b3_20261029` and QA roles. Check its actual presence and connectivity again. Only run on isolated `blueprint_qa_*` database; never Production or CX-174 hosted QA. Verify role grants, DB name, version, all-function PUBLIC ACL, receipt/revoke/replay/expiry/version publication tests. Record actual PASS/FAIL/NOT RUN.
 
 **BLOCKED** pending actual QA SQL source transfer. This file is a checkpoint only, not an implementation.
+
+## Codex actual local preflight — 2026-10-29 HKT
+
+Tested branch commit: `4c00a2ba6535206dbdb560b3acca034b966b6d07`.
+
+**PASS — environment preflight only, exit 0.** Executed this branch's `preflight_only.sh` using existing GNU Bash 5.2.37 and the existing isolated PostgreSQL 17.11 cluster. Actual target: `blueprint_qa_b2b3_20261029`, `127.0.0.1:55489`, `transaction_read_only=on`. Both `anon` and `authenticated` were verified NOSUPERUSER, NOBYPASSRLS, NOLOGIN. Server shut down cleanly afterward. Original TCP SCRAM authentication was retained; a discarded disposable QA admin credential was rotated locally without exporting it.
+
+Initial invocation returned exit 3 (`NOT RUN: psql missing`). Setting the process PATH to the existing portable PostgreSQL bin resolved it; no installation was needed.
+
+A QA-path-only `.gitattributes` rule now keeps shell files LF on Windows/Linux. The shell logic is unchanged. This portability suggestion came from Xiaomi MiMo and was applied/reviewed by Codex; the initial failure was PATH-related, not a demonstrated CRLF failure.
+
+**B2/B3 Receipt SQL runtime remains BLOCKED / NOT RUN.** The 15 original SQL/runner/test files listed above are still missing. Issuance, consumption, identity, revocation, replay, publication, expiry, module RLS and PUBLIC ACL acceptance have not executed. No implementation was reconstructed from chat summaries. The source holder must transfer the actual files to this dedicated QA branch before those tests can run.
+
+Machine-readable evidence: `qa/blueprint-v06-b2b3/PG17-PREFLIGHT-RESULT.json`.
+
+This batch Xiaomi usage receipt: input 139, output 691, total 830 tokens; reasoning detail 587 (already within provider accounting, not added to total). Codex exact tokens unavailable. Phase 9 OFF; Release Gate LOCAL_REVIEW_READY. No Merge, Deploy or Production modifications.
