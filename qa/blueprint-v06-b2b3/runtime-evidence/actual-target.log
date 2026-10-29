@@ -1,0 +1,5 @@
+                                 version                                  |          current_database          | inet_server_addr | inet_server_port 
+--------------------------------------------------------------------------+------------------------------------+------------------+------------------
+ PostgreSQL 17.11 on x86_64-windows, compiled by msvc-19.44.35228, 64-bit | blueprint_qa_b2b3_recheck_20261029 | 127.0.0.1        |            55489
+(1 row)
+

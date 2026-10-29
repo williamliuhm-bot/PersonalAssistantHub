@@ -1,0 +1,185 @@
+{
+  "date_hkt": "2026-10-29",
+  "repository": "williamliuhm-bot/PersonalAssistantHub",
+  "branch": "qa/blueprint-v06-b2b3-pg17-20261029",
+  "received_head": "6f2e0cb0d051e0ef81f6ba3061435da5d1f8b9c8",
+  "postgresql": "17.11",
+  "initial_database": "blueprint_qa_b2b3_20261029",
+  "final_database": "blueprint_qa_b2b3_recheck_20261029",
+  "host": "127.0.0.1",
+  "port": 55489,
+  "runner_exit": 0,
+  "runner_elapsed_ms": 7549,
+  "static_tests": {
+    "pass": 20,
+    "fail": 0
+  },
+  "runtime_steps": [
+    {
+      "script": "acceptance.sql",
+      "exit_code": 0,
+      "elapsed_seconds": 0,
+      "result": "PASS"
+    },
+    {
+      "script": "acceptance_extra.sql",
+      "exit_code": 0,
+      "elapsed_seconds": 1,
+      "result": "PASS"
+    },
+    {
+      "script": "acceptance_wall_clock.sql",
+      "exit_code": 0,
+      "elapsed_seconds": 0,
+      "result": "PASS"
+    },
+    {
+      "script": "acceptance_timed_expiry.sql",
+      "exit_code": 0,
+      "elapsed_seconds": 3,
+      "result": "PASS"
+    },
+    {
+      "script": "06_final_all_functions_gate.sql",
+      "exit_code": 0,
+      "elapsed_seconds": 1,
+      "result": "PASS"
+    }
+  ],
+  "current_manifest": [
+    {
+      "file": "00_fence_candidate_v1.sql",
+      "sha256": "284f34a778b1d56d0974efff10df4a0f071adfb59b298a2c5d8a7243c88fa450",
+      "match": true
+    },
+    {
+      "file": "01_consumption_extension.sql",
+      "sha256": "a5637b6cc76d6002e19fdc02d97a601a74c8c6737ab032841e930e322d2bb293",
+      "match": true
+    },
+    {
+      "file": "02_receipt_content_binding.sql",
+      "sha256": "a8979b53ccb3bcc7b5bea194fba085d6eb99177368306710e004aed68478b87a",
+      "match": true
+    },
+    {
+      "file": "03_security_hardening.sql",
+      "sha256": "46482b09edc123e4c38f7e13c8e23746b12f94bc0c6e95b1c8e7471ed1c1c772",
+      "match": true
+    },
+    {
+      "file": "04_integrity_patch.sql",
+      "sha256": "c51c46e1cdbb6c356112d548c0db63782279f18a70ce5c683366685284acae76",
+      "match": true
+    },
+    {
+      "file": "05_wall_clock_expiry.sql",
+      "sha256": "64b469ac3889cfd8ecdbc7a516b845612743ac7ad55f76e108eb29cd4f29b496",
+      "match": true
+    },
+    {
+      "file": "06_final_all_functions_gate.sql",
+      "sha256": "d10ae6c8bc4beb4da2602d7446d5aa6eaace8d31ba640a8b5b54ac2c63099f2b",
+      "match": true
+    },
+    {
+      "file": "README.md",
+      "sha256": "1f9492aedbc05111bda9ddabb4e95a9f02adb6262ff5387cd521b787fe1b6165",
+      "match": true
+    },
+    {
+      "file": "acceptance.sql",
+      "sha256": "8797a160707c46f210c67f0b88ff956a38107b01780ea274840ec9bc8166d0f5",
+      "match": true
+    },
+    {
+      "file": "acceptance_extra.sql",
+      "sha256": "2091a88b3f79648f4909256ee3e9daa2134f8ca5975fefaf011b8add6d48c830",
+      "match": true
+    },
+    {
+      "file": "acceptance_timed_expiry.sql",
+      "sha256": "cc38a9b18556cc17c321b5512907806d948e123267ba9940b3333b7445319857",
+      "match": true
+    },
+    {
+      "file": "acceptance_wall_clock.sql",
+      "sha256": "bf4efb7415e559ee952734a2d30cf891e17cd255665a8f370a87d80aa9e26c44",
+      "match": true
+    },
+    {
+      "file": "run_batch.sh",
+      "sha256": "fae2379d7310475f8a61fc440dfa23b04466279583f28e06ab1be734399830e1",
+      "match": true
+    },
+    {
+      "file": "test_batch.py",
+      "sha256": "6c0e107a748ddc8f9bd495d6f94a728e5fd89c1b5a7c7f004808b0242d047cf3",
+      "match": true
+    },
+    {
+      "file": "preflight_only.sh",
+      "sha256": "0f1df59bf472e9d2916834c03cd42529257e1ea7bb52bbe2610c0db2e0f0ec42",
+      "match": true
+    },
+    {
+      "file": "original/06_final_all_functions_gate.sql",
+      "sha256": "2966f831e1b09e1872c8b36728159c4e0b641b21845ba131180480a7ca382fda",
+      "match": true
+    },
+    {
+      "file": "original/SHA256SUMS.txt",
+      "sha256": "7b082f3d3c1ccb28bd7b8924d842ecaa3f7ce0514c703856124325b5d494af03",
+      "match": true
+    }
+  ],
+  "original_source_validation": "13/13 original Git blobs match original SHA256SUMS; received hardened runner intentionally differed",
+  "preserved_originals": [
+    "original/SHA256SUMS.txt",
+    "original/06_final_all_functions_gate.sql"
+  ],
+  "failures_preserved": [
+    {
+      "attempt": "runtime-01",
+      "reason": "bundled Git usr/bin absent from process PATH; dirname unavailable; no migration ran"
+    },
+    {
+      "attempt": "runtime-02",
+      "reason": "first four SQL scripts passed; final ACL gate record p shadowed pg_proc p alias; exit 3"
+    }
+  ],
+  "fixes": [
+    "QA text LF checkout rules preserve checksum bytes",
+    "Required-file list ordered consistently with execution order; original static suite passes",
+    "Final gate pg_proc alias renamed candidate_proc; checks unchanged",
+    "Current SHA256SUMS covers every current source including runner, corrected SQL and archived originals"
+  ],
+  "inventory": {
+    "force_rls_tables": 4,
+    "version_commits": 2,
+    "receipt_consumptions": 2
+  },
+  "limitations": [
+    "Trusted backend AuthN/session adapter and application version publication integration remain unimplemented",
+    "Live Supabase Auth, external revocation, hosted app E2E and independent-session concurrency NOT RUN",
+    "Supplied tests exercise synthetic QA SQL semantics; not Production acceptance"
+  ],
+  "tracker": "PENDING_SYNC: no existing Blueprint task/CX record found; no ID invented and no Production control-data write",
+  "xiaomi": {
+    "calls": 1,
+    "input_tokens": 231,
+    "output_tokens": 1400,
+    "reasoning_tokens": 1402,
+    "total_tokens": 1631,
+    "answer": "No text output",
+    "receipt_note": "Raw provider counts retained; reasoning detail exceeds output count in tool receipt. Not corrected or added again to total."
+  },
+  "codex_tokens": null,
+  "codex_tokens_status": "not provided",
+  "phase9": "OFF",
+  "cx174": "BLOCKED",
+  "release_gate": "LOCAL_REVIEW_READY",
+  "merge": false,
+  "deploy": false,
+  "production_modified": false
+}

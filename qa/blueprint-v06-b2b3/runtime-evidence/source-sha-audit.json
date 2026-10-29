@@ -1,0 +1,114 @@
+[
+  {
+    "file": "00_fence_candidate_v1.sql",
+    "original_manifest": "284f34a778b1d56d0974efff10df4a0f071adfb59b298a2c5d8a7243c88fa450",
+    "received_git": "284f34a778b1d56d0974efff10df4a0f071adfb59b298a2c5d8a7243c88fa450",
+    "current": "284f34a778b1d56d0974efff10df4a0f071adfb59b298a2c5d8a7243c88fa450",
+    "received_match": true,
+    "changed": false
+  },
+  {
+    "file": "01_consumption_extension.sql",
+    "original_manifest": "a5637b6cc76d6002e19fdc02d97a601a74c8c6737ab032841e930e322d2bb293",
+    "received_git": "a5637b6cc76d6002e19fdc02d97a601a74c8c6737ab032841e930e322d2bb293",
+    "current": "a5637b6cc76d6002e19fdc02d97a601a74c8c6737ab032841e930e322d2bb293",
+    "received_match": true,
+    "changed": false
+  },
+  {
+    "file": "02_receipt_content_binding.sql",
+    "original_manifest": "a8979b53ccb3bcc7b5bea194fba085d6eb99177368306710e004aed68478b87a",
+    "received_git": "a8979b53ccb3bcc7b5bea194fba085d6eb99177368306710e004aed68478b87a",
+    "current": "a8979b53ccb3bcc7b5bea194fba085d6eb99177368306710e004aed68478b87a",
+    "received_match": true,
+    "changed": false
+  },
+  {
+    "file": "03_security_hardening.sql",
+    "original_manifest": "46482b09edc123e4c38f7e13c8e23746b12f94bc0c6e95b1c8e7471ed1c1c772",
+    "received_git": "46482b09edc123e4c38f7e13c8e23746b12f94bc0c6e95b1c8e7471ed1c1c772",
+    "current": "46482b09edc123e4c38f7e13c8e23746b12f94bc0c6e95b1c8e7471ed1c1c772",
+    "received_match": true,
+    "changed": false
+  },
+  {
+    "file": "04_integrity_patch.sql",
+    "original_manifest": "c51c46e1cdbb6c356112d548c0db63782279f18a70ce5c683366685284acae76",
+    "received_git": "c51c46e1cdbb6c356112d548c0db63782279f18a70ce5c683366685284acae76",
+    "current": "c51c46e1cdbb6c356112d548c0db63782279f18a70ce5c683366685284acae76",
+    "received_match": true,
+    "changed": false
+  },
+  {
+    "file": "05_wall_clock_expiry.sql",
+    "original_manifest": "64b469ac3889cfd8ecdbc7a516b845612743ac7ad55f76e108eb29cd4f29b496",
+    "received_git": "64b469ac3889cfd8ecdbc7a516b845612743ac7ad55f76e108eb29cd4f29b496",
+    "current": "64b469ac3889cfd8ecdbc7a516b845612743ac7ad55f76e108eb29cd4f29b496",
+    "received_match": true,
+    "changed": false
+  },
+  {
+    "file": "06_final_all_functions_gate.sql",
+    "original_manifest": "2966f831e1b09e1872c8b36728159c4e0b641b21845ba131180480a7ca382fda",
+    "received_git": "2966f831e1b09e1872c8b36728159c4e0b641b21845ba131180480a7ca382fda",
+    "current": "d10ae6c8bc4beb4da2602d7446d5aa6eaace8d31ba640a8b5b54ac2c63099f2b",
+    "received_match": true,
+    "changed": true
+  },
+  {
+    "file": "README.md",
+    "original_manifest": "1f9492aedbc05111bda9ddabb4e95a9f02adb6262ff5387cd521b787fe1b6165",
+    "received_git": "1f9492aedbc05111bda9ddabb4e95a9f02adb6262ff5387cd521b787fe1b6165",
+    "current": "1f9492aedbc05111bda9ddabb4e95a9f02adb6262ff5387cd521b787fe1b6165",
+    "received_match": true,
+    "changed": false
+  },
+  {
+    "file": "acceptance.sql",
+    "original_manifest": "8797a160707c46f210c67f0b88ff956a38107b01780ea274840ec9bc8166d0f5",
+    "received_git": "8797a160707c46f210c67f0b88ff956a38107b01780ea274840ec9bc8166d0f5",
+    "current": "8797a160707c46f210c67f0b88ff956a38107b01780ea274840ec9bc8166d0f5",
+    "received_match": true,
+    "changed": false
+  },
+  {
+    "file": "acceptance_extra.sql",
+    "original_manifest": "2091a88b3f79648f4909256ee3e9daa2134f8ca5975fefaf011b8add6d48c830",
+    "received_git": "2091a88b3f79648f4909256ee3e9daa2134f8ca5975fefaf011b8add6d48c830",
+    "current": "2091a88b3f79648f4909256ee3e9daa2134f8ca5975fefaf011b8add6d48c830",
+    "received_match": true,
+    "changed": false
+  },
+  {
+    "file": "acceptance_timed_expiry.sql",
+    "original_manifest": "cc38a9b18556cc17c321b5512907806d948e123267ba9940b3333b7445319857",
+    "received_git": "cc38a9b18556cc17c321b5512907806d948e123267ba9940b3333b7445319857",
+    "current": "cc38a9b18556cc17c321b5512907806d948e123267ba9940b3333b7445319857",
+    "received_match": true,
+    "changed": false
+  },
+  {
+    "file": "acceptance_wall_clock.sql",
+    "original_manifest": "bf4efb7415e559ee952734a2d30cf891e17cd255665a8f370a87d80aa9e26c44",
+    "received_git": "bf4efb7415e559ee952734a2d30cf891e17cd255665a8f370a87d80aa9e26c44",
+    "current": "bf4efb7415e559ee952734a2d30cf891e17cd255665a8f370a87d80aa9e26c44",
+    "received_match": true,
+    "changed": false
+  },
+  {
+    "file": "run_batch.sh",
+    "original_manifest": "7c740cf4a1c742ce3b63cb5b487b6bba2b968166095e030de1819b64d90bd78f",
+    "received_git": "d999550c54c191612d959a61cd8e510e327b340d0b5cfb56c587e1aede49d505",
+    "current": "fae2379d7310475f8a61fc440dfa23b04466279583f28e06ab1be734399830e1",
+    "received_match": false,
+    "changed": true
+  },
+  {
+    "file": "test_batch.py",
+    "original_manifest": "6c0e107a748ddc8f9bd495d6f94a728e5fd89c1b5a7c7f004808b0242d047cf3",
+    "received_git": "6c0e107a748ddc8f9bd495d6f94a728e5fd89c1b5a7c7f004808b0242d047cf3",
+    "current": "6c0e107a748ddc8f9bd495d6f94a728e5fd89c1b5a7c7f004808b0242d047cf3",
+    "received_match": true,
+    "changed": false
+  }
+]

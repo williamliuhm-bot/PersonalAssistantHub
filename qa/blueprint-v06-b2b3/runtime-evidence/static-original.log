@@ -1,0 +1,14 @@
+......F.............
+======================================================================
+FAIL: test_final_gate_last (__main__.QA.test_final_gate_last)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_batch.py", line 17, in test_final_gate_last
+    def test_final_gate_last(self): self.assertEqual(runner.index("acceptance_timed_expiry.sql") < runner.index("06_final_all_functions_gate.sql"),True)
+                                    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True
+
+----------------------------------------------------------------------
+Ran 20 tests in 0.006s
+
+FAILED (failures=1)

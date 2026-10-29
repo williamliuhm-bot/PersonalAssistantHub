@@ -1,0 +1,18 @@
+      nspname       |       relname        | relrowsecurity | relforcerowsecurity 
+--------------------+----------------------+----------------+---------------------
+ blueprint_fence_qa | authorization_state  | t              | t
+ blueprint_fence_qa | receipt_consumptions | t              | t
+ blueprint_fence_qa | receipts             | t              | t
+ blueprint_fence_qa | version_commits      | t              | t
+(4 rows)
+
+ versions 
+----------
+        2
+(1 row)
+
+ consumptions 
+--------------
+            2
+(1 row)
+

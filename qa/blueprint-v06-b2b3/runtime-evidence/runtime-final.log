@@ -1,0 +1,106 @@
+PASS: isolated PostgreSQL 17 target and roles; SQL runtime acceptance NOT RUN
+Running acceptance.sql
+DO
+CREATE SCHEMA
+REVOKE
+DO
+GRANT
+GRANT
+CREATE TABLE
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+REVOKE
+REVOKE
+CREATE FUNCTION
+ALTER FUNCTION
+REVOKE
+CREATE FUNCTION
+ALTER FUNCTION
+REVOKE
+REVOKE
+ALTER TABLE
+CREATE TABLE
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+REVOKE
+CREATE FUNCTION
+GRANT
+ALTER FUNCTION
+REVOKE
+REVOKE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+DROP FUNCTION
+CREATE FUNCTION
+GRANT
+ALTER FUNCTION
+REVOKE
+REVOKE
+CREATE FUNCTION
+REVOKE
+BEGIN
+CREATE FUNCTION
+DROP TRIGGER
+psql:03_security_hardening.sql:20: NOTICE:  trigger "receipt_claims_immutable" for relation "blueprint_fence_qa.receipts" does not exist, skipping
+CREATE TRIGGER
+ALTER TABLE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+DROP TRIGGER
+psql:04_integrity_patch.sql:20: NOTICE:  trigger "version_commits_immutable" for relation "blueprint_fence_qa.version_commits" does not exist, skipping
+CREATE TRIGGER
+CREATE FUNCTION
+psql:04_integrity_patch.sql:31: NOTICE:  trigger "receipt_consumptions_immutable" for relation "blueprint_fence_qa.receipt_consumptions" does not exist, skipping
+DROP TRIGGER
+CREATE TRIGGER
+REVOKE
+REVOKE
+COMMIT
+DO
+psql:acceptance.sql:31: NOTICE:  PASS: baseline RLS and denied executor privileges
+psql:acceptance.sql:69: NOTICE:  PASS: content mismatch, success, replay, revocation
+DO
+Running acceptance_extra.sql
+DO
+psql:acceptance_extra.sql:25: NOTICE:  PASS: four tables and executor effective privilege isolation
+psql:acceptance_extra.sql:49: NOTICE:  PASS: mismatch rollback and valid commit
+DO
+Running acceptance_wall_clock.sql
+DO
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+psql:acceptance_wall_clock.sql:24: NOTICE:  PASS: wall-clock patch installed; timed expiry test follows
+DO
+Running acceptance_timed_expiry.sql
+DO
+psql:acceptance_timed_expiry.sql:48: NOTICE:  PASS: long-transaction wall-clock expiry and atomic rejection
+DO
+Running 06_final_all_functions_gate.sql
+psql:06_final_all_functions_gate.sql:71: NOTICE:  PASS: final all-function ACL, owner, roles and RLS gate
+DO
+QA execution completed; inspect receipts and test evidence before claiming PASS

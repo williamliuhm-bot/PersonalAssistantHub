@@ -1,0 +1,5 @@
+acceptance.sql	0	0
+acceptance_extra.sql	0	1
+acceptance_wall_clock.sql	0	0
+acceptance_timed_expiry.sql	0	3
+06_final_all_functions_gate.sql	0	1

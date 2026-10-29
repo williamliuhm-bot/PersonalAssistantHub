@@ -1,0 +1,2 @@
+C:/Users/wil/Documents/Codex/2026-10-29/blueprint-center-v0-6-b2-b3/work/PersonalAssistantHub-QA/qa/blueprint-v06-b2b3/run_batch.sh: line 4: dirname: command not found
+NOT RUN: missing 00_fence_candidate_v1.sql

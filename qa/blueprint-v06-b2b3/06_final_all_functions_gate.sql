@@ -35,7 +35,7 @@ BEGIN
      RAISE NOTICE 'NOT RUN: client role % absent; repeat ACL gate in Supabase-compatible isolated QA',role_name;
    END IF;
  END LOOP;
- IF NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+ IF NOT EXISTS (SELECT 1 FROM pg_proc candidate_proc JOIN pg_namespace n ON n.oid=candidate_proc.pronamespace
    WHERE n.nspname='blueprint_fence_qa')
  THEN RAISE EXCEPTION 'No functions in QA schema'; END IF;
  IF (SELECT count(*) FROM pg_roles WHERE rolname IN

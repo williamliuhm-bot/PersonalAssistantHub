@@ -29,3 +29,7 @@ A QA-path-only `.gitattributes` rule now keeps shell files LF on Windows/Linux. 
 Machine-readable evidence: `qa/blueprint-v06-b2b3/PG17-PREFLIGHT-RESULT.json`.
 
 This batch Xiaomi usage receipt: input 139, output 691, total 830 tokens; reasoning detail 587 (already within provider accounting, not added to total). Codex exact tokens unavailable. Phase 9 OFF; Release Gate LOCAL_REVIEW_READY. No Merge, Deploy or Production modifications.
+
+## Superseding runtime result - 2026-10-29 HKT
+
+Original source transfer is complete. The supplied isolated PG17.11 SQL suite now passes 5/5 scripts after the narrow final-gate alias and runner/line-ending fixes. See PG17-RUNTIME-ACCEPTANCE.md and PG17-RUNTIME-RESULT.json. Full trusted backend AuthN, application version publication integration and hosted/Production acceptance are still NOT IMPLEMENTED / NOT RUN. Phase 9 OFF, CX-174 BLOCKED, Release Gate LOCAL_REVIEW_READY. Tracker PENDING_SYNC: no existing Blueprint task/CX row found.
