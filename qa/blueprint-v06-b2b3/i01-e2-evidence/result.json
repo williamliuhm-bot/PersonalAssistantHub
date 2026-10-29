@@ -1,0 +1,55 @@
+{
+  "date_hkt": "2026-10-29",
+  "repository": "williamliuhm-bot/PersonalAssistantHub",
+  "branch": "qa/blueprint-v06-b2b3-pg17-20261029",
+  "baseline": "be94450468fcf67b64c0e77c1ebdccee15c03eb9",
+  "I01_E2": "COMPLETE_OFFLINE_NEGATIVE_TEST_SCOPE",
+  "I01_E3": "CONTRACT_ANALYSIS_COMPLETE_PROPOSAL_REQUIRES_REVIEW",
+  "previous_methods": 26,
+  "new_methods": 8,
+  "new_only_before_fix": {
+    "exit_code": 1,
+    "reported_failures": 3,
+    "reported_errors": 2,
+    "note": "includes subtest outcomes in three problematic methods"
+  },
+  "final_identity_suite": {
+    "pass": 34,
+    "fail": 0,
+    "exit_code": 0,
+    "elapsed_seconds": 0.521
+  },
+  "source_sha256": {
+    "personal-assistant-hub/integration-service/app/blueprint_identity.py": "de255e8de6103547d969356778e84973529280084e5b415b10a58b77549730d4",
+    "qa/blueprint-v06-b2b3/test_identity_boundary.py": "b894b248b95849f971a823388ea667af09a5d5d3c8ee150aa18dfc70bd8905f0"
+  },
+  "fix": "Centralize safe aware-clock reading and redact callback failures; classify invalid/regressed clocks as invalid_server_clock. Authorization predicates unchanged.",
+  "feature_default": "OFF",
+  "real_jwt_authn": "NOT RUN",
+  "provider_mapping_and_publication": "BLOCKED",
+  "hosted_e2e": "NOT RUN",
+  "prior_pg17": "REUSED_5_OF_5_PASS_NOT_RERUN",
+  "ddl_grants_login_changes": false,
+  "production_modified": false,
+  "merge": false,
+  "deploy": false,
+  "tracker": "PENDING_SYNC_NO_EXISTING_TASK_ROW",
+  "phase9": "OFF",
+  "cx174": "BLOCKED",
+  "release_gate": "LOCAL_REVIEW_READY",
+  "xiaomi": {
+    "provider": "Xiaomi MiMo",
+    "account": "Xiaomi 1",
+    "model": "mimo-v2.6-pro",
+    "generation_calls": 1,
+    "retries": 0,
+    "usable_output": true,
+    "integrated_method": "test_session_expires_during_authority_await",
+    "input_tokens": 168,
+    "output_tokens": 587,
+    "reasoning_tokens": 491,
+    "total_tokens": 755
+  },
+  "codex_tokens": null,
+  "codex_usage": "Exact task tokens not provided"
+}

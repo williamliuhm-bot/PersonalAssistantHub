@@ -99,6 +99,16 @@ class BlueprintIdentityBoundary:
             enabled=os.getenv('BLUEPRINT_B2B3_IDENTITY_ENABLED', '0') == '1',
         )
 
+    def _read_clock(self) -> datetime:
+        try:
+            value = self._clock()
+            valid = _aware(value)
+        except Exception:
+            raise BlueprintIdentityDenied('invalid_server_clock') from None
+        if not valid:
+            raise BlueprintIdentityDenied('invalid_server_clock')
+        return value
+
     async def authorize(
         self,
         access_token: str,
@@ -117,9 +127,7 @@ class BlueprintIdentityBoundary:
         if (not isinstance(tenant_id, UUID) or type(expected_generation) is not int
                 or expected_generation < 1 or scope not in ('NORMAL', 'CRITICAL')):
             raise BlueprintIdentityDenied('invalid_target')
-        now = self._clock()
-        if not _aware(now):
-            raise BlueprintIdentityDenied('invalid_server_clock')
+        now = self._read_clock()
         try:
             claims = self._decoder(access_token)
         except Exception:
@@ -145,8 +153,10 @@ class BlueprintIdentityBoundary:
         except Exception:
             raise BlueprintIdentityDenied('authority_unavailable') from None
         # Re-read the clock after awaited IO; expiry cannot use request-start time.
-        checked_now = self._clock()
-        if not _aware(checked_now) or checked_now < now or checked_now >= token_expiry:
+        checked_now = self._read_clock()
+        if checked_now < now:
+            raise BlueprintIdentityDenied('invalid_server_clock')
+        if checked_now >= token_expiry:
             raise BlueprintIdentityDenied('expired_or_invalid_access_token')
         if not isinstance(current, CurrentAuthority):
             raise BlueprintIdentityDenied('backend_identity_unavailable')

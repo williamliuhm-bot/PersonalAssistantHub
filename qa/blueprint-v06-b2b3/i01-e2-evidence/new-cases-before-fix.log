@@ -1,0 +1,99 @@
+test_session_expires_during_authority_await (__main__.IdentityBoundaryTests.test_session_expires_during_authority_await) ... ok
+test_authority_freshness_deadline_during_await (__main__.IdentityBoundaryTests.test_authority_freshness_deadline_during_await) ... ok
+test_role_downgrade_rechecks_without_stale_jwt_escalation (__main__.IdentityBoundaryTests.test_role_downgrade_rechecks_without_stale_jwt_escalation) ... ok
+test_generation_changed_during_lookup (__main__.IdentityBoundaryTests.test_generation_changed_during_lookup) ... ok
+test_clock_exception_before_or_after_lookup_is_redacted (__main__.IdentityBoundaryTests.test_clock_exception_before_or_after_lookup_is_redacted) ...
+  test_clock_exception_before_or_after_lookup_is_redacted (__main__.IdentityBoundaryTests.test_clock_exception_before_or_after_lookup_is_redacted) (failed_read=1) ... ERROR
+  test_clock_exception_before_or_after_lookup_is_redacted (__main__.IdentityBoundaryTests.test_clock_exception_before_or_after_lookup_is_redacted) (failed_read=2) ... ERROR
+test_invalid_clock_value_before_or_after_lookup (__main__.IdentityBoundaryTests.test_invalid_clock_value_before_or_after_lookup) ...
+  test_invalid_clock_value_before_or_after_lookup (__main__.IdentityBoundaryTests.test_invalid_clock_value_before_or_after_lookup) (value=None, failed_read=2) ... FAIL
+  test_invalid_clock_value_before_or_after_lookup (__main__.IdentityBoundaryTests.test_invalid_clock_value_before_or_after_lookup) (value=datetime.datetime(2026, 10, 29, 4, 0), failed_read=2) ... FAIL
+test_clock_regression_after_lookup_is_denied (__main__.IdentityBoundaryTests.test_clock_regression_after_lookup_is_denied) ... FAIL
+test_unrepresentable_finite_expiry_is_denied (__main__.IdentityBoundaryTests.test_unrepresentable_finite_expiry_is_denied) ... ok
+
+======================================================================
+ERROR: test_clock_exception_before_or_after_lookup_is_redacted (__main__.IdentityBoundaryTests.test_clock_exception_before_or_after_lookup_is_redacted) (failed_read=1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 277, in test_clock_exception_before_or_after_lookup_is_redacted
+    await self.denied('invalid_server_clock')
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 64, in denied
+    await self.authorize(**changes)
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 60, in authorize
+    return await self.boundary.authorize(TOKEN, **target)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\personal-assistant-hub\integration-service\app\blueprint_identity.py", line 120, in authorize
+    now = self._clock()
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 272, in broken_clock
+    raise RuntimeError(TOKEN)
+RuntimeError: synthetic-access-token-not-a-real-JWT
+
+======================================================================
+ERROR: test_clock_exception_before_or_after_lookup_is_redacted (__main__.IdentityBoundaryTests.test_clock_exception_before_or_after_lookup_is_redacted) (failed_read=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 277, in test_clock_exception_before_or_after_lookup_is_redacted
+    await self.denied('invalid_server_clock')
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 64, in denied
+    await self.authorize(**changes)
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 60, in authorize
+    return await self.boundary.authorize(TOKEN, **target)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\personal-assistant-hub\integration-service\app\blueprint_identity.py", line 148, in authorize
+    checked_now = self._clock()
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 272, in broken_clock
+    raise RuntimeError(TOKEN)
+RuntimeError: synthetic-access-token-not-a-real-JWT
+
+======================================================================
+FAIL: test_invalid_clock_value_before_or_after_lookup (__main__.IdentityBoundaryTests.test_invalid_clock_value_before_or_after_lookup) (value=None, failed_read=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 290, in test_invalid_clock_value_before_or_after_lookup
+    await self.denied('invalid_server_clock')
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 65, in denied
+    self.assertEqual(str(caught.exception), code)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'expired_or_invalid_access_token' != 'invalid_server_clock'
+- expired_or_invalid_access_token
++ invalid_server_clock
+
+
+======================================================================
+FAIL: test_invalid_clock_value_before_or_after_lookup (__main__.IdentityBoundaryTests.test_invalid_clock_value_before_or_after_lookup) (value=datetime.datetime(2026, 10, 29, 4, 0), failed_read=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 290, in test_invalid_clock_value_before_or_after_lookup
+    await self.denied('invalid_server_clock')
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 65, in denied
+    self.assertEqual(str(caught.exception), code)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'expired_or_invalid_access_token' != 'invalid_server_clock'
+- expired_or_invalid_access_token
++ invalid_server_clock
+
+
+======================================================================
+FAIL: test_clock_regression_after_lookup_is_denied (__main__.IdentityBoundaryTests.test_clock_regression_after_lookup_is_denied)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Python314\Lib\asyncio\runners.py", line 128, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Python314\Lib\asyncio\base_events.py", line 720, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 296, in test_clock_regression_after_lookup_is_denied
+    await self.denied('invalid_server_clock')
+  File "C:\Users\wil\Documents\Codex\2026-10-29\blueprint-center-v0-6-b2-b3\work\PersonalAssistantHub-QA\qa\blueprint-v06-b2b3\test_identity_boundary.py", line 65, in denied
+    self.assertEqual(str(caught.exception), code)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'expired_or_invalid_access_token' != 'invalid_server_clock'
+- expired_or_invalid_access_token
++ invalid_server_clock
+
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.245s
+
+FAILED (failures=3, errors=2)

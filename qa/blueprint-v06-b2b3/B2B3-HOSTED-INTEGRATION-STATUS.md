@@ -4,9 +4,11 @@
 
 | Work item | Actual status |
 |---|---|
-| I01 backend identity boundary | OFFLINE ADAPTER IMPLEMENTED; 26 unit tests PASS. Live verifier/session/authority composition BLOCKED. |
+| I01 backend identity boundary | OFFLINE ADAPTER IMPLEMENTED; latest I01-E2 34/34 unit tests PASS. Live verifier/session/authority composition BLOCKED. |
 | I02 application publication | SCHEMA/WRITE-PATH INSPECTION COMPLETE; integration BLOCKED by absent application version tables and identity/session mapping. No speculative schema or publisher was created. |
 | I03 hosted readiness | SOURCE INVENTORY COMPLETE; hosted identity, ownership, worker slots, TLS/store guarantees and quota/cost NOT VERIFIED. No deployment/provisioning/probes. |
+
+Latest update: I01-E2 adds eight previously uncovered negative methods, repairs clock exception redaction/classification, and passes 34/34. See `I01-E2-RESULT.md`. I01-E3 contract analysis is a reviewable proposal in `I01-E3-IDENTITY-CONTRACT-PROPOSAL.md`; no schema or live provider was created. The original 26-test evidence below is retained as historical baseline, not relabeled as a new run.
 
 ## Preserved evidence and boundaries
 
@@ -82,7 +84,7 @@ No new cloud resource is needed or incurred for this offline source/test batch. 
 
 First identify/approve the actual authoritative identity/session/membership mapping and application version-table contract (or a separately reviewed additive QA schema plan). Then bind the dormant adapter using the existing verified decoder, blacklist and same-store transaction facilities. Separately designate an existing no-cost isolated hosted resource with owner/quotas/TLS proof and limited test authorization. Until these concrete dependencies exist, keep the feature OFF and do not deploy or repurpose the CX-174 hosted database.
 
-## Verification, rollback and usage
+## Prior offline batch verification, rollback and usage
 
 Run only the changed-path offline tests:
 

@@ -5,6 +5,7 @@ import hashlib
 import os
 from pathlib import Path
 import sys
+import traceback
 import unittest
 from unittest.mock import patch
 from uuid import UUID
@@ -228,6 +229,80 @@ class IdentityBoundaryTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaisesRegex(BlueprintIdentityDenied, 'invalid_access_token'):
                 await self.boundary.authorize(token, tenant_id=TENANT,
                                               expected_generation=4, scope='NORMAL')
+
+    async def test_session_expires_during_authority_await(self):
+        # Xiaomi draft, reformatted and reviewed against the actual fixture.
+        self.authority.current = replace(
+            self.authority.current, session_expires_at=NOW + timedelta(seconds=1))
+        times = iter((NOW, NOW + timedelta(seconds=2)))
+        self.boundary = BlueprintIdentityBoundary(
+            self.decoder, self.authority, enabled=True, clock=lambda: next(times))
+        await self.denied('stale_or_expired_authority')
+
+    async def test_authority_freshness_deadline_during_await(self):
+        times = iter((NOW, NOW + timedelta(seconds=5)))
+        self.boundary = BlueprintIdentityBoundary(
+            self.decoder, self.authority, enabled=True, clock=lambda: next(times))
+        await self.denied('stale_or_expired_authority')
+
+    async def test_role_downgrade_rechecks_without_stale_jwt_escalation(self):
+        self.claims['role'] = 'admin'
+        await self.authorize(scope='CRITICAL')
+        self.authority.current = replace(self.authority.current, role='approver')
+        await self.denied('role_denied', scope='CRITICAL')
+        self.assertEqual(len(self.authority.calls), 2)
+
+    async def test_generation_changed_during_lookup(self):
+        async def changed_authority(_):
+            self.authority.current = replace(self.authority.current, generation=5)
+            return self.authority.current
+        self.authority.resolve_access_token = changed_authority
+        await self.denied('stale_generation')
+
+    async def test_clock_exception_before_or_after_lookup_is_redacted(self):
+        for failed_read in (1, 2):
+            with self.subTest(failed_read=failed_read):
+                reads = 0
+                self.authority.calls.clear()
+                self.decoder_calls.clear()
+
+                def broken_clock():
+                    nonlocal reads
+                    reads += 1
+                    if reads == failed_read:
+                        raise RuntimeError(TOKEN)
+                    return NOW
+
+                self.boundary = BlueprintIdentityBoundary(
+                    self.decoder, self.authority, enabled=True, clock=broken_clock)
+                with self.assertRaises(BlueprintIdentityDenied) as caught:
+                    await self.authorize()
+                self.assertEqual(str(caught.exception), 'invalid_server_clock')
+                self.assertTrue(caught.exception.__suppress_context__)
+                self.assertNotIn(TOKEN, ''.join(traceback.format_exception(caught.exception)))
+                self.assertEqual(len(self.authority.calls), failed_read - 1)
+                self.assertEqual(len(self.decoder_calls), failed_read - 1)
+
+    async def test_invalid_clock_value_before_or_after_lookup(self):
+        for invalid in (None, NOW.replace(tzinfo=None)):
+            for failed_read in (1, 2):
+                with self.subTest(value=invalid, failed_read=failed_read):
+                    values = (invalid, NOW) if failed_read == 1 else (NOW, invalid)
+                    times = iter(values)
+                    self.boundary = BlueprintIdentityBoundary(
+                        self.decoder, self.authority, enabled=True,
+                        clock=lambda: next(times))
+                    await self.denied('invalid_server_clock')
+
+    async def test_clock_regression_after_lookup_is_denied(self):
+        times = iter((NOW, NOW - timedelta(microseconds=1)))
+        self.boundary = BlueprintIdentityBoundary(
+            self.decoder, self.authority, enabled=True, clock=lambda: next(times))
+        await self.denied('invalid_server_clock')
+
+    async def test_unrepresentable_finite_expiry_is_denied(self):
+        self.claims['exp'] = 1e20
+        await self.denied('expired_or_invalid_access_token')
 
 
 if __name__ == '__main__':
